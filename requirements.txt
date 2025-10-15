@@ -1,0 +1,7 @@
+toga>=0.4.0
+sound_lib>=0.0.10
+pyttsx3>=2.90
+briefcase>=0.3.0
+pytest>=7.0
+pytest-cov>=4.0
+toga-dummy>=0.4.0

@@ -1,0 +1,6 @@
+include README.md
+include LICENSE
+include DEVELOPMENT.md
+include requirements.txt
+recursive-include soundpacks *.wav *.mp3 *.ogg *.md
+recursive-include tests *.py

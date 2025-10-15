@@ -1,0 +1,54 @@
+[tool.briefcase]
+project_name = "AccessiClock"
+bundle = "com.orinks"
+version = "0.1.0"
+url = "https://github.com/Orinks/AccessiClock"
+license = "MIT"
+author = "Orinks"
+author_email = ""
+
+[tool.briefcase.app.accessiclock]
+formal_name = "AccessiClock"
+description = "Clock app with customizable soundpacks and TTS/AI voices"
+sources = ["src/accessiclock"]
+requires = [
+    "toga>=0.4.0",
+    "sound_lib>=0.0.10",
+    "pyttsx3>=2.90",
+]
+test_requires = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "toga-dummy>=0.4.0",
+]
+
+[build-system]
+requires = ["briefcase>=0.3.0"]
+build-backend = "briefcase.build"
+
+[project]
+name = "accessiclock"
+version = "0.1.0"
+description = "Clock app with customizable soundpacks and TTS/AI voices"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Orinks"}
+]
+dependencies = [
+    "toga>=0.4.0",
+    "sound_lib>=0.0.10",
+    "pyttsx3>=2.90",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "toga-dummy>=0.4.0",
+    "briefcase>=0.3.0",
+]
+
+[project.scripts]
+accessiclock = "accessiclock.app:main"
