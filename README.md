@@ -20,7 +20,7 @@ This application provides an accessible, screen-reader-friendly clock with hourl
 - **Test Functionality**: Preview soundpack before enabling
 
 ### 🔄 Planned Features
-- **Phase 2**: Background audio system with pygame and threading
+- **Phase 2**: Background audio system with sound_lib (accessible audio library) and threading
 - **Phase 3**: Built-in soundpack audio files (Westminster chimes, nature sounds, digital beeps)
 - **Phase 4**: Settings persistence and configuration dialog
 - **Phase 5**: Digital/analog display toggle, advanced volume controls
@@ -80,7 +80,7 @@ accessible_talking_clock/
 
 4. **Install dependencies**
    ```bash
-   uv pip install briefcase toga pygame ipykernel matplotlib
+   uv pip install briefcase toga sound_lib ipykernel matplotlib
    ```
 
 ### Running the Application
@@ -142,7 +142,7 @@ pytest
 
 - **Framework**: [Toga](https://beeware.org/project/projects/libraries/toga/) (BeeWare)
 - **Packaging**: [Briefcase](https://beeware.org/project/projects/tools/briefcase/)
-- **Audio**: pygame (Phase 2+)
+- **Audio**: [sound_lib](https://github.com/accessibleapps/sound_lib) - High-level wrapper around BASS audio library, specifically designed for accessible applications (Phase 2+)
 - **Platform**: Native Windows widgets via WinForms
 - **Accessibility**: Windows Accessibility APIs (automatic via native widgets)
 

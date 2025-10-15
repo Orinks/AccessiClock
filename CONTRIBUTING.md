@@ -17,7 +17,7 @@ All contributions must maintain or improve accessibility:
 1. Fork and clone the repository
 2. Create a virtual environment: `uv venv`
 3. Activate: `.venv\Scripts\activate` (Windows) or `source .venv/bin/activate` (Linux/Mac)
-4. Install dependencies: `uv pip install briefcase toga pygame ipykernel matplotlib`
+4. Install dependencies: `uv pip install briefcase toga sound_lib ipykernel matplotlib`
 5. Run the app: `cd accessibletalkingclock && python -m briefcase dev`
 
 ## Testing Accessibility
