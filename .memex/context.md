@@ -25,6 +25,9 @@ python -m briefcase dev
 # Using startup scripts
 .\start.ps1  # Windows
 ./start.sh   # Unix/Linux
+
+# Running tests
+pytest tests/
 ```
 
 ## Project Structure
@@ -40,6 +43,10 @@ accessible_talking_clock/           # Project root (Git repository here)
 │   │   ├── __main__.py
 │   │   └── resources/            # Icons, sounds (Phase 3+)
 │   ├── tests/
+│   │   ├── __init__.py
+│   │   ├── test_accessibility.py  # Accessibility behavior tests
+│   │   ├── test_clock.py          # Clock functionality tests
+│   │   └── test_controls.py       # UI control behavior tests
 │   ├── pyproject.toml            # Briefcase configuration
 │   ├── start.ps1                 # Windows startup script
 │   └── start.sh                  # Unix startup script
@@ -47,6 +54,65 @@ accessible_talking_clock/           # Project root (Git repository here)
 ```
 
 **CRITICAL**: Git repository is at `accessible_talking_clock/` root level, NOT inside the `accessibletalkingclock/` subdirectory.
+
+## Testing Methodology
+
+### Test-Driven Development (TDD)
+**Required approach for all new features:**
+1. **Write test first**: Define expected behavior before implementation
+2. **Run test**: Verify it fails (red)
+3. **Implement minimum code**: Make the test pass (green)
+4. **Refactor**: Improve code while keeping tests passing
+5. **Repeat**: Continue cycle for next behavior
+
+### Behavior-Driven Development (BDD)
+**Focus on user-facing behavior:**
+- Tests should describe WHAT the feature does, not HOW it does it
+- Use descriptive test names: `test_clock_updates_every_second()`
+- Assert expected outcomes from user perspective
+- Example:
+  ```python
+  def test_volume_button_cycles_through_levels():
+      """When user clicks volume button, volume cycles through 25%, 50%, 75%, 100%, then back to 25%."""
+      app = create_test_app()
+      initial_volume = app.volume_level
+      
+      app._on_volume_toggle(None)
+      assert app.volume_level == 50
+      assert app.status_label.text == "Volume set to 50%"
+      
+      app._on_volume_toggle(None)
+      assert app.volume_level == 75
+      
+      app._on_volume_toggle(None)
+      assert app.volume_level == 100
+      
+      app._on_volume_toggle(None)
+      assert app.volume_level == 25  # Cycles back
+  ```
+
+### Test Organization
+- **Unit Tests**: Individual component behavior (methods, functions)
+- **Integration Tests**: Component interactions (UI + logic)
+- **Accessibility Tests**: Screen reader compatibility, keyboard navigation
+- All tests in `accessibletalkingclock/tests/` directory
+- Use pytest framework
+- Mock external dependencies (file I/O, audio playback)
+
+### Test Assertions
+**Always assert expected behavior:**
+- ✅ `assert clock.display.value.startswith("12:")` - Tests behavior
+- ✅ `assert status_label.text == "Volume set to 50%"` - Tests user feedback
+- ✅ `assert sound.is_playing == True` - Tests state
+- ❌ `assert type(widget) == toga.TextInput` - Tests implementation detail
+
+### Accessibility Testing
+**Manual verification required (cannot be fully automated):**
+- Run NVDA and verify announcements
+- Test Tab navigation sequence
+- Verify keyboard shortcuts work
+- Document test procedures in test docstrings
+- Create automated tests for keyboard event handling where possible
 
 ## Accessibility Requirements (NON-NEGOTIABLE)
 
@@ -72,6 +138,7 @@ accessible_talking_clock/           # Project root (Git repository here)
 - Verify Tab navigation reaches all controls
 - Verify all controls announce their purpose
 - Test button activation with Enter/Space keys
+- Write automated tests for keyboard event handling
 
 ## Code Conventions
 
@@ -103,6 +170,14 @@ def _on_control_change(self, widget):
 
 ## Development Workflow
 
+### Feature Implementation Process
+1. **Plan**: Define user-facing behavior
+2. **Test**: Write test(s) asserting expected behavior
+3. **Implement**: Write minimum code to pass tests
+4. **Verify**: Run tests and manual accessibility checks
+5. **Refactor**: Improve code quality
+6. **Commit**: Save progress with descriptive message
+
 ### Phase-Based Development
 Current: **Phase 1 Complete** ✅
 - Phase 1: Core UI with accessibility
@@ -113,11 +188,68 @@ Current: **Phase 1 Complete** ✅
 - Phase 6: Distribution packaging
 
 ### Git Practices
-- Repository at project root (`accessible_talking_clock/`)
+
+#### Branch Strategy
+- **Repository location**: `accessible_talking_clock/` (project root)
+- **For new features**: ALWAYS create a new branch
+  - Base branch: current branch (usually `main` or `dev`)
+  - Naming convention: `feature/feature-name` or `phase-N/feature-name`
+  - Example: `git checkout -b feature/audio-playback`
+- **Never work directly on main/dev branches** for new features
+
+#### Commit & Push Workflow
+- **Commit in phases**: Save work incrementally as you progress
+  - After writing tests
+  - After implementing feature
+  - After refactoring
+  - After manual testing
+- **Push regularly**: Push commits to remote branch to ensure work is backed up
+  - Push after each meaningful commit
+  - Push at end of work session
+  - Push before switching tasks
+- **Commit message format**:
+  ```
+  Brief description of change
+  
+  - Detailed point 1
+  - Detailed point 2
+  
+  Co-Authored-By: Memex <noreply@memex.tech>
+  ```
+
+#### Example Workflow
+```bash
+# Starting new feature
+git checkout main  # or dev
+git pull origin main
+git checkout -b feature/audio-playback
+
+# Work cycle
+# ... write tests ...
+git add tests/test_audio.py
+git commit -m "Add tests for audio playback system"
+git push origin feature/audio-playback
+
+# ... implement feature ...
+git add src/accessibletalkingclock/app.py
+git commit -m "Implement audio playback with sound_lib"
+git push origin feature/audio-playback
+
+# ... refactor ...
+git add src/accessibletalkingclock/app.py
+git commit -m "Refactor audio code into separate methods"
+git push origin feature/audio-playback
+
+# When feature complete
+# Create pull request or merge to main/dev
+```
+
+#### Commit Best Practices
 - Commit early and often
-- Use descriptive commit messages
-- Include "Co-Authored-By: Memex <noreply@memex.tech>" for AI assistance
-- Feature branches for new development
+- Each commit should be a logical unit of work
+- Include "Co-Authored-By: Memex <noreply@memex.tech>" for AI-assisted work
+- Write descriptive commit messages
+- Push after each commit to prevent data loss
 
 ### Package Installation
 ```bash
@@ -125,7 +257,7 @@ Current: **Phase 1 Complete** ✅
 uv venv
 .venv\Scripts\activate  # Windows
 source .venv/bin/activate  # Unix/Linux
-uv pip install briefcase toga sound_lib ipykernel matplotlib
+uv pip install briefcase toga sound_lib pytest ipykernel matplotlib
 ```
 
 ## Known Issues & Workarounds
@@ -194,6 +326,7 @@ uv pip install briefcase toga sound_lib ipykernel matplotlib
 - Toga documentation: https://toga.readthedocs.io/
 - Briefcase documentation: https://briefcase.readthedocs.io/
 - NVDA download: https://www.nvaccess.org/download/
+- pytest documentation: https://docs.pytest.org/
 - Design guidelines: https://raw.githubusercontent.com/memextech/templates/refs/heads/main/design/minimalist-b2b-professional.md
 
 ## Phase 2+ Preparation Notes
