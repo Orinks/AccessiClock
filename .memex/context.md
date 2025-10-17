@@ -22,6 +22,9 @@ Desktop clock application designed specifically for visually impaired users usin
 cd accessibletalkingclock
 python -m briefcase dev
 
+# If briefcase dev fails with template out of date error:
+python -m briefcase create  # Reset configuration, overwrite when prompted
+
 # Using startup scripts
 .\start.ps1  # Windows
 ./start.sh   # Unix/Linux
@@ -29,6 +32,10 @@ python -m briefcase dev
 # Running tests
 pytest tests/
 ```
+
+### Briefcase Troubleshooting
+- **Template out of date error**: Run `briefcase create` and choose to overwrite to reset the configuration pyproject file
+- **App won't start**: Check logs in `logs/` directory for detailed error messages
 
 ## Project Structure
 
@@ -41,12 +48,16 @@ accessible_talking_clock/           # Project root (Git repository here)
 │   │   ├── app.py                # Main application logic
 │   │   ├── __init__.py
 │   │   ├── __main__.py
+│   │   ├── audio/                # Phase 2: Audio playback system
+│   │   │   ├── __init__.py
+│   │   │   ├── player.py         # AudioPlayer class
+│   │   │   └── test_sound.wav    # Test audio file
 │   │   └── resources/            # Icons, sounds (Phase 3+)
+│   │       └── sounds/           # Soundpack audio files
 │   ├── tests/
 │   │   ├── __init__.py
-│   │   ├── test_accessibility.py  # Accessibility behavior tests
-│   │   ├── test_clock.py          # Clock functionality tests
-│   │   └── test_controls.py       # UI control behavior tests
+│   │   ├── test_app.py           # Main application tests
+│   │   └── test_audio_player.py  # AudioPlayer tests (Phase 2)
 │   ├── pyproject.toml            # Briefcase configuration
 │   ├── start.ps1                 # Windows startup script
 │   └── start.sh                  # Unix startup script
@@ -179,9 +190,31 @@ def _on_control_change(self, widget):
 6. **Commit**: Save progress with descriptive message
 
 ### Phase-Based Development
-Current: **Phase 1 Complete** ✅
-- Phase 1: Core UI with accessibility
-- Phase 2: Audio playback system (sound_lib, threading)
+Current: **Phase 2 Complete** ✅
+
+#### Completed Phases
+- **Phase 1: Core UI with accessibility** ✅
+  - Clock display with TextInput for screen reader access
+  - Soundpack selection dropdown
+  - Volume control button (cycling through levels)
+  - Interval switches (hourly, half-hour, quarter-hour)
+  - Test Chime button
+  - Settings button placeholder
+  - All controls keyboard accessible
+  - Tab navigation working
+  - Status label for screen reader feedback
+
+- **Phase 2: Audio playback system** ✅
+  - sound_lib library integration
+  - AudioPlayer class with thread-safe playback
+  - Volume control (0-100%)
+  - Test sound file (440Hz beep)
+  - 15 comprehensive unit tests (all passing)
+  - UI integration (volume button, Test Chime button)
+  - Error handling and status feedback
+  - Non-blocking audio playback
+
+#### Upcoming Phases
 - Phase 3: Soundpack implementation with audio files
 - Phase 4: Settings persistence
 - Phase 5: Polish and advanced features
@@ -309,7 +342,9 @@ uv pip install briefcase toga sound_lib pytest ipykernel matplotlib
 - Application README: App-specific usage instructions
 - Include accessibility testing procedures
 
-## Testing Checklist (Phase 1)
+## Testing Checklist
+
+### Phase 1 ✅
 - [x] Application launches without errors
 - [x] Clock display updates every second
 - [x] Clock display is accessible via Tab key
@@ -322,6 +357,19 @@ uv pip install briefcase toga sound_lib pytest ipykernel matplotlib
 - [x] Tab order is logical
 - [x] All buttons activate with Enter/Space
 
+### Phase 2 ✅
+- [x] sound_lib installed successfully
+- [x] AudioPlayer class implemented
+- [x] Volume control (0-100%) working
+- [x] Test sound file created (440Hz beep)
+- [x] 15 unit tests written and passing
+- [x] AudioPlayer integrated with UI
+- [x] Volume button updates AudioPlayer
+- [x] Test Chime button plays audio
+- [x] Error handling for audio failures
+- [x] Status label announces audio events
+- [ ] Manual NVDA testing (requires user interaction)
+
 ## Resources & References
 - Toga documentation: https://toga.readthedocs.io/
 - Briefcase documentation: https://briefcase.readthedocs.io/
@@ -329,35 +377,43 @@ uv pip install briefcase toga sound_lib pytest ipykernel matplotlib
 - pytest documentation: https://docs.pytest.org/
 - Design guidelines: https://raw.githubusercontent.com/memextech/templates/refs/heads/main/design/minimalist-b2b-professional.md
 
-## Phase 2+ Preparation Notes
+## Audio System (Phase 2 - Complete)
 
-### Audio System (sound_lib)
-- **Library**: sound_lib (high-level wrapper around BASS audio library)
-- **Advantages**: 
-  - Specifically designed for accessible applications
-  - Wide format support (MP3, WAV, OGG, FLAC, and many more)
-  - Thread-safe audio playback
-  - Simple API for basic playback needs
-  - Cross-platform (Windows, macOS, Linux)
-- **Installation**: `pip install sound_lib` or `uv pip install sound_lib`
+### Implementation Details
+- **Library**: sound_lib 0.83 (high-level wrapper around BASS audio library)
+- **Status**: ✅ Installed and integrated
+- **Location**: `src/accessibletalkingclock/audio/player.py`
+- **Features Implemented**:
+  - AudioPlayer class with thread-safe playback
+  - Volume control (0-100% with clamping)
+  - Wide format support (WAV, MP3, OGG, FLAC)
+  - Playback status checking
+  - Error handling for missing/invalid files
+  - Automatic BASS initialization
+  - UI integration (volume button, Test Chime button)
+- **Testing**: 15 unit tests, all passing
 - **Documentation**: https://sound-lib.readthedocs.io/
-- **Basic Usage Pattern**:
-  ```python
-  from sound_lib import stream
-  
-  # Create and play a sound
-  s = stream.FileStream(file="chime.wav")
-  s.volume = 0.5  # Set volume (0.0 to 1.0)
-  s.play()
-  
-  # Check if playing
-  if s.is_playing:
-      # Handle playback state
-  
-  # Stop and cleanup
-  s.stop()
-  s.free()
-  ```
+
+### Usage in Application
+```python
+from accessibletalkingclock.audio import AudioPlayer
+
+# Initialize (done in app.startup())
+self.audio_player = AudioPlayer(volume_percent=50)
+
+# Play sound
+self.audio_player.play_sound("path/to/sound.wav")
+
+# Change volume
+self.audio_player.set_volume(75)
+
+# Check status
+if self.audio_player.is_playing():
+    # Handle playback state
+
+# Stop playback
+self.audio_player.stop()
+```
 
 ### Audio File Organization
 - Audio files will go in `src/accessibletalkingclock/resources/sounds/`

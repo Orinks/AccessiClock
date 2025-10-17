@@ -5,9 +5,12 @@ Accessible Talking Clock - A desktop clock application designed for visually imp
 import asyncio
 import logging
 from datetime import datetime
+from pathlib import Path
 import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
+
+from accessibletalkingclock.audio import AudioPlayer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -16,10 +19,24 @@ logger = logging.getLogger(__name__)
 
 class AccessibleTalkingClock(toga.App):
     """Main application class for the Accessible Talking Clock."""
+    
+    def __init__(self, *args, **kwargs):
+        """Initialize application."""
+        super().__init__(*args, **kwargs)
+        self._clock_task = None
+        self._shutdown_flag = False
 
     def startup(self):
         """Initialize the application interface."""
         logger.info("Starting Accessible Talking Clock application")
+        
+        # Initialize audio player (Phase 2)
+        try:
+            self.audio_player = AudioPlayer(volume_percent=50)
+            logger.info("Audio player initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize audio player: {e}")
+            self.audio_player = None
         
         # Create the main window
         main_box = toga.Box(style=Pack(direction=COLUMN, padding=10))
@@ -161,16 +178,17 @@ class AccessibleTalkingClock(toga.App):
     def _schedule_clock_update(self):
         """Schedule regular clock display updates."""
         async def update_clock(*args):
-            while True:
+            while not self._shutdown_flag:
                 try:
                     self.clock_display.value = self._get_current_time_string()
                     await asyncio.sleep(1)
                 except Exception as e:
                     logger.error(f"Error updating clock display: {e}")
                     await asyncio.sleep(1)
+            logger.info("Clock update task stopped")
         
-        # Schedule the coroutine to run
-        self.add_background_task(update_clock)
+        # Schedule the coroutine to run and store reference
+        self._clock_task = self.add_background_task(update_clock)
 
     def _on_soundpack_change(self, widget):
         """Handle soundpack selection change."""
@@ -189,9 +207,12 @@ class AccessibleTalkingClock(toga.App):
         volume_label = widget.parent.children[0]  # Get the first child (volume label)
         volume_label.text = f"Volume: {self.current_volume}%"
         
+        # Update audio player volume (Phase 2)
+        if self.audio_player:
+            self.audio_player.set_volume(self.current_volume)
+        
         logger.info(f"Volume changed to: {self.current_volume}%")
         self.status_label.text = f"Volume set to {self.current_volume}%"
-        # Audio system integration will be implemented in Phase 2
 
     def _on_interval_change(self, widget):
         """Handle interval switch changes."""
@@ -212,14 +233,57 @@ class AccessibleTalkingClock(toga.App):
         """Test the current chime sound."""
         current_soundpack = self.soundpack_selection.value
         logger.info(f"Testing chime for soundpack: {current_soundpack}")
-        self.status_label.text = f"Testing chime: {current_soundpack}"
-        # Audio playback will be implemented in Phase 2
+        
+        # Play test sound (Phase 2)
+        if self.audio_player:
+            try:
+                # Get path to test sound file
+                test_sound_path = Path(__file__).parent / "audio" / "test_sound.wav"
+                if test_sound_path.exists():
+                    self.audio_player.play_sound(str(test_sound_path))
+                    self.status_label.text = f"Playing test audio at volume {self.current_volume}%"
+                    logger.info("Test audio playing successfully")
+                else:
+                    self.status_label.text = "Test audio file not found"
+                    logger.error(f"Test audio file not found at: {test_sound_path}")
+            except Exception as e:
+                self.status_label.text = f"Error playing audio: {str(e)}"
+                logger.error(f"Error playing test audio: {e}")
+        else:
+            self.status_label.text = "Audio player not initialized"
+            logger.warning("Audio player not initialized, cannot play test sound")
 
     def _open_settings(self, widget):
         """Open the settings dialog."""
         logger.info("Opening settings dialog")
         self.status_label.text = "Settings dialog (to be implemented)"
         # Settings dialog will be implemented in Phase 4
+    
+    async def on_exit(self):
+        """Clean up resources before application exits."""
+        logger.info("Application exit handler called")
+        
+        # Signal clock task to stop
+        self._shutdown_flag = True
+        
+        # Give the clock task time to stop gracefully
+        try:
+            await asyncio.sleep(0.5)
+            logger.info("Clock update task stopped")
+        except Exception as e:
+            logger.warning(f"Error waiting for clock task: {e}")
+        
+        # Clean up audio player
+        if self.audio_player:
+            try:
+                self.audio_player.cleanup()
+            except Exception as e:
+                logger.error(f"Error cleaning up audio player: {e}")
+        
+        logger.info("Application cleanup completed")
+        
+        # Allow the app to exit
+        return True
 
 
 def main():

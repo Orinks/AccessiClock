@@ -1,0 +1,32 @@
+[
+  {
+    "id": "p2-1",
+    "content": "[P:2-1] Install sound_lib and setup audio directory structure",
+    "status": "completed"
+  },
+  {
+    "id": "p2-2",
+    "content": "[P:2-2] Create test audio file and AudioPlayer tests",
+    "status": "completed"
+  },
+  {
+    "id": "p2-3",
+    "content": "[P:2-3] Implement AudioPlayer class with basic playback",
+    "status": "completed"
+  },
+  {
+    "id": "p2-4",
+    "content": "[P:2-4] Add volume control and status methods to AudioPlayer",
+    "status": "completed"
+  },
+  {
+    "id": "p2-5",
+    "content": "[P:2-5] Integrate AudioPlayer with UI (Test Audio button)",
+    "status": "completed"
+  },
+  {
+    "id": "p2-6",
+    "content": "[P:2-6] Manual testing with NVDA and verify non-blocking playback",
+    "status": "pending"
+  }
+]

@@ -21,6 +21,7 @@ test_sources = [
 ]
 
 requires = [
+    "sound_lib",
 ]
 test_requires = [
     "pytest",
