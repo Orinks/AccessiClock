@@ -26,7 +26,7 @@
   },
   {
     "id": "6",
-    "content": "[P:3-6] Test full integration with NVDA and verify chiming behavior",
+    "content": "[P:3-6] User testing with NVDA - follow NVDA_TESTING_GUIDE.md",
     "status": "pending"
   }
 ]
