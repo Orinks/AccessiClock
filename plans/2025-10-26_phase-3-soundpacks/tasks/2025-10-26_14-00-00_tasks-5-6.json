@@ -26,7 +26,7 @@
   },
   {
     "id": "6",
-    "content": "[P:3-6] User testing with NVDA - follow NVDA_TESTING_GUIDE.md",
-    "status": "pending"
+    "content": "[P:3-6] User testing with NVDA - verified working correctly",
+    "status": "completed"
   }
 ]
