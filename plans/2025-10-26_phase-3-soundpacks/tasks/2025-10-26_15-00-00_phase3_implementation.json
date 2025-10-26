@@ -7,12 +7,12 @@
   {
     "id": "2",
     "content": "[P:mvp-2] Write tests and implement Soundpack class (TDD)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "id": "3",
     "content": "[P:mvp-3] Write tests and implement SoundpackManager class (TDD)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "id": "4",
