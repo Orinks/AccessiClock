@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1",
+    "content": "[P:mvp-1] Create resources/sounds/ directory structure with .gitkeep files",
+    "status": "pending"
+  },
+  {
+    "id": "2",
+    "content": "[P:mvp-2] Write tests and implement Soundpack class (TDD)",
+    "status": "pending"
+  },
+  {
+    "id": "3",
+    "content": "[P:mvp-3] Write tests and implement SoundpackManager class (TDD)",
+    "status": "pending"
+  },
+  {
+    "id": "4",
+    "content": "[P:mvp-4] Find and download royalty-free audio files for all soundpacks",
+    "status": "pending"
+  },
+  {
+    "id": "5",
+    "content": "[P:mvp-5] Integrate soundpack system into app.py UI",
+    "status": "pending"
+  },
+  {
+    "id": "6",
+    "content": "[P:mvp-6] Implement automatic chiming based on time and interval switches",
+    "status": "pending"
+  }
+]
