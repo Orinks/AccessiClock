@@ -11,6 +11,7 @@ from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
 
 from accessibletalkingclock.audio import AudioPlayer
+from accessibletalkingclock.soundpack import SoundpackManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -25,6 +26,7 @@ class AccessibleTalkingClock(toga.App):
         super().__init__(*args, **kwargs)
         self._clock_task = None
         self._shutdown_flag = False
+        self._last_chime_time = None  # Track last chime to prevent duplicates
 
     def startup(self):
         """Initialize the application interface."""
@@ -37,6 +39,28 @@ class AccessibleTalkingClock(toga.App):
         except Exception as e:
             logger.error(f"Failed to initialize audio player: {e}")
             self.audio_player = None
+        
+        # Initialize soundpack manager (Phase 3)
+        try:
+            sounds_dir = Path(__file__).parent / "resources" / "sounds"
+            self.soundpack_manager = SoundpackManager(sounds_dir)
+            
+            # Discover available soundpacks
+            available_packs = self.soundpack_manager.discover_soundpacks()
+            logger.info(f"Discovered soundpacks: {available_packs}")
+            
+            # Load default soundpack
+            default_soundpack = "classic"
+            if default_soundpack in available_packs:
+                if self.soundpack_manager.load_soundpack(default_soundpack):
+                    logger.info(f"Default soundpack '{default_soundpack}' loaded successfully")
+                else:
+                    logger.error(f"Failed to load default soundpack '{default_soundpack}'")
+            else:
+                logger.warning(f"Default soundpack '{default_soundpack}' not found")
+        except Exception as e:
+            logger.error(f"Failed to initialize soundpack manager: {e}")
+            self.soundpack_manager = None
         
         # Create the main window
         main_box = toga.Box(style=Pack(direction=COLUMN, padding=10))
@@ -73,9 +97,19 @@ class AccessibleTalkingClock(toga.App):
             style=Pack(padding=(5, 10, 5, 0), width=100)
         )
         
+        # Populate soundpack dropdown with discovered soundpacks (Phase 3)
+        if self.soundpack_manager:
+            available_packs = self.soundpack_manager.available_soundpacks
+            # Capitalize pack names for display
+            pack_items = [pack.capitalize() for pack in available_packs]
+            default_value = "Classic" if "Classic" in pack_items else (pack_items[0] if pack_items else "Classic")
+        else:
+            pack_items = ["Classic", "Nature", "Digital"]
+            default_value = "Classic"
+        
         self.soundpack_selection = toga.Selection(
-            items=["Classic (Westminster)", "Nature (Birds & Water)", "Digital (Beeps)"],
-            value="Classic (Westminster)",
+            items=pack_items,
+            value=default_value,
             style=Pack(flex=1, padding=5)
         )
         self.soundpack_selection.on_change = self._on_soundpack_change
@@ -176,11 +210,35 @@ class AccessibleTalkingClock(toga.App):
         return datetime.now().strftime("%I:%M:%S %p")
 
     def _schedule_clock_update(self):
-        """Schedule regular clock display updates."""
+        """Schedule regular clock display updates and automatic chiming."""
         async def update_clock(*args):
             while not self._shutdown_flag:
                 try:
-                    self.clock_display.value = self._get_current_time_string()
+                    # Update clock display
+                    current_time = datetime.now()
+                    self.clock_display.value = current_time.strftime("%I:%M:%S %p")
+                    
+                    # Check if we should play a chime (Phase 3)
+                    minute = current_time.minute
+                    
+                    # Prevent duplicate chimes - only chime once per minute
+                    current_minute_key = (current_time.hour, current_time.minute)
+                    if self._last_chime_time != current_minute_key:
+                        chime_type = None
+                        
+                        # Determine chime type based on time and enabled intervals
+                        if minute == 0 and self.hourly_switch.value:
+                            chime_type = "hour"
+                        elif minute == 30 and self.half_hour_switch.value:
+                            chime_type = "half"
+                        elif minute in (15, 45) and self.quarter_hour_switch.value:
+                            chime_type = "quarter"
+                        
+                        # Play the chime if applicable
+                        if chime_type:
+                            self._play_chime(chime_type)
+                            self._last_chime_time = current_minute_key
+                    
                     await asyncio.sleep(1)
                 except Exception as e:
                     logger.error(f"Error updating clock display: {e}")
@@ -192,9 +250,20 @@ class AccessibleTalkingClock(toga.App):
 
     def _on_soundpack_change(self, widget):
         """Handle soundpack selection change."""
-        logger.info(f"Soundpack changed to: {widget.value}")
-        self.status_label.text = f"Soundpack changed to: {widget.value}"
-        # Audio system integration will be implemented in Phase 2
+        selected = widget.value.lower()  # Convert display name to soundpack name
+        logger.info(f"Soundpack changed to: {selected}")
+        
+        # Load the selected soundpack (Phase 3)
+        if self.soundpack_manager:
+            if self.soundpack_manager.load_soundpack(selected):
+                self.status_label.text = f"Soundpack changed to {widget.value}"
+                logger.info(f"Successfully loaded soundpack: {selected}")
+            else:
+                self.status_label.text = f"Failed to load {widget.value} soundpack"
+                logger.error(f"Failed to load soundpack: {selected}")
+        else:
+            self.status_label.text = f"Soundpack changed to: {widget.value}"
+            logger.warning("Soundpack manager not initialized")
 
     def _change_volume(self, widget):
         """Handle volume button press - cycle through volume levels."""
@@ -230,29 +299,55 @@ class AccessibleTalkingClock(toga.App):
         # Timer system integration will be implemented in Phase 2
 
     def _test_chime(self, widget):
-        """Test the current chime sound."""
-        current_soundpack = self.soundpack_selection.value
-        logger.info(f"Testing chime for soundpack: {current_soundpack}")
+        """Test the current chime sound - plays hour chime from current soundpack."""
+        current_soundpack_name = self.soundpack_selection.value
+        logger.info(f"Testing hour chime for soundpack: {current_soundpack_name}")
         
-        # Play test sound (Phase 2)
-        if self.audio_player:
-            try:
-                # Get path to test sound file
-                test_sound_path = Path(__file__).parent / "audio" / "test_sound.wav"
-                if test_sound_path.exists():
-                    self.audio_player.play_sound(str(test_sound_path))
-                    self.status_label.text = f"Playing test audio at volume {self.current_volume}%"
-                    logger.info("Test audio playing successfully")
-                else:
-                    self.status_label.text = "Test audio file not found"
-                    logger.error(f"Test audio file not found at: {test_sound_path}")
-            except Exception as e:
-                self.status_label.text = f"Error playing audio: {str(e)}"
-                logger.error(f"Error playing test audio: {e}")
-        else:
+        # Check if both audio player and soundpack manager are initialized
+        if not self.audio_player:
             self.status_label.text = "Audio player not initialized"
             logger.warning("Audio player not initialized, cannot play test sound")
+            return
+        
+        if not self.soundpack_manager or not self.soundpack_manager.current_soundpack:
+            self.status_label.text = "No soundpack loaded"
+            logger.warning("No soundpack loaded, cannot play test chime")
+            return
+        
+        # Play hour chime from current soundpack (Phase 3)
+        try:
+            soundpack = self.soundpack_manager.current_soundpack
+            hour_sound = soundpack.get_sound_path("hour")
+            self.audio_player.play_sound(str(hour_sound))
+            self.status_label.text = f"Playing {current_soundpack_name} hour chime at {self.current_volume}%"
+            logger.info(f"Playing hour chime from {soundpack.name}: {hour_sound}")
+        except Exception as e:
+            self.status_label.text = f"Error playing chime: {str(e)}"
+            logger.error(f"Error playing test chime: {e}")
 
+    def _play_chime(self, chime_type: str):
+        """
+        Play a chime sound from the current soundpack.
+        
+        Args:
+            chime_type: Type of chime to play ("hour", "half", "quarter")
+        """
+        if not self.audio_player:
+            logger.warning("Cannot play chime: audio player not initialized")
+            return
+        
+        if not self.soundpack_manager or not self.soundpack_manager.current_soundpack:
+            logger.warning("Cannot play chime: no soundpack loaded")
+            return
+        
+        try:
+            soundpack = self.soundpack_manager.current_soundpack
+            chime_path = soundpack.get_sound_path(chime_type)
+            self.audio_player.play_sound(str(chime_path))
+            logger.info(f"Playing {chime_type} chime from {soundpack.name}")
+        except Exception as e:
+            logger.error(f"Error playing {chime_type} chime: {e}")
+    
     def _open_settings(self, widget):
         """Open the settings dialog."""
         logger.info("Opening settings dialog")

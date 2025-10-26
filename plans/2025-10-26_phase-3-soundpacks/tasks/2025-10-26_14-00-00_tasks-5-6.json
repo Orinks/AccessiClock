@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1",
+    "content": "[P:3-5] Initialize SoundpackManager in app.startup() with default soundpack",
+    "status": "completed"
+  },
+  {
+    "id": "2",
+    "content": "[P:3-5] Update _on_soundpack_change() to load selected soundpack",
+    "status": "completed"
+  },
+  {
+    "id": "3",
+    "content": "[P:3-5] Update _on_test_chime() to play current soundpack hour chime",
+    "status": "completed"
+  },
+  {
+    "id": "4",
+    "content": "[P:3-6] Add _play_chime() helper method for time-based chiming",
+    "status": "completed"
+  },
+  {
+    "id": "5",
+    "content": "[P:3-6] Update clock update task to trigger chimes at correct times",
+    "status": "completed"
+  },
+  {
+    "id": "6",
+    "content": "[P:3-6] Test full integration with NVDA and verify chiming behavior",
+    "status": "pending"
+  }
+]
