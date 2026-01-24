@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "accessiclock"
+version = "0.1.0"
+description = "AccessiClock: An accessible talking clock with customizable clock packs and AI voices"
+authors = [
+    { name = "Orinks" }
+]
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = [
+    "wxPython>=4.2.0",
+    "playsound3",
+    "pyttsx3",
+    "httpx>=0.20.0",
+    "attrs>=22.2.0",
+    "python-dateutil",
+]
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Intended Audience :: End Users/Desktop",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-mock",
+    "pytest-cov",
+    "ruff>=0.9.0",
+    "mypy>=1.0.0",
+]
+build = [
+    "pyinstaller>=6.0.0",
+    "pillow>=10.0.0",
+]
+ai = [
+    "openai>=1.0.0",
+    "elevenlabs>=0.2.0",
+]
+
+[project.scripts]
+accessiclock = "accessiclock.main:main"
+
+[project.gui-scripts]
+accessiclock-gui = "accessiclock.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true
