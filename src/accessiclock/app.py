@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 import wx
 
+from .audio.tts_engine import TTSEngine
 from .paths import Paths
 from .services.clock_pack_loader import ClockPackLoader
 from .services.clock_service import ClockService
@@ -43,6 +44,9 @@ class AccessiClockApp(wx.App):
         # Audio player (initialized in OnInit)
         self.audio_player = None
 
+        # TTS engine (initialized in OnInit)
+        self.tts_engine: TTSEngine | None = None
+
         # Services
         self.clock_service: ClockService | None = None
         self.clock_pack_loader: ClockPackLoader | None = None
@@ -69,6 +73,9 @@ class AccessiClockApp(wx.App):
 
             # Initialize audio player
             self._init_audio()
+
+            # Initialize TTS engine
+            self._init_tts()
 
             # Load configuration
             self._load_config()
@@ -124,6 +131,15 @@ class AccessiClockApp(wx.App):
         except Exception as e:
             logger.warning(f"Audio player initialization failed: {e}")
             self.audio_player = None
+
+    def _init_tts(self) -> None:
+        """Initialize the TTS engine."""
+        try:
+            self.tts_engine = TTSEngine()
+            logger.info(f"TTS engine initialized ({self.tts_engine.engine_type})")
+        except Exception as e:
+            logger.warning(f"TTS engine initialization failed: {e}")
+            self.tts_engine = None
 
     def _load_config(self) -> None:
         """Load configuration from file."""
@@ -242,6 +258,27 @@ class AccessiClockApp(wx.App):
             logger.error(f"Failed to play test sound: {e}")
             return False
 
+    def announce_time(self, style: str = "simple") -> bool:
+        """
+        Announce the current time using TTS.
+        
+        Args:
+            style: Time format style ("simple", "natural", "precise").
+            
+        Returns:
+            True if announced, False if TTS unavailable.
+        """
+        if not self.tts_engine:
+            logger.warning("TTS engine not available")
+            return False
+
+        from datetime import datetime
+
+        current_time = datetime.now().time()
+        self.tts_engine.speak_time(current_time, style=style)
+        logger.info(f"Time announced: {current_time.strftime('%I:%M %p')}")
+        return True
+
     def check_and_play_chime(self) -> str | None:
         """
         Check if a chime should play now and play it.
@@ -307,5 +344,12 @@ class AccessiClockApp(wx.App):
                 self.audio_player.cleanup()
             except Exception as e:
                 logger.warning(f"Error cleaning up audio: {e}")
+
+        # Clean up TTS
+        if self.tts_engine:
+            try:
+                self.tts_engine.cleanup()
+            except Exception as e:
+                logger.warning(f"Error cleaning up TTS: {e}")
 
         return 0

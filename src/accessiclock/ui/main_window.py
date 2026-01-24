@@ -317,8 +317,13 @@ class MainWindow(wx.Frame):
     def _on_announce_time(self, event: wx.CommandEvent) -> None:
         """Handle announce time button/menu."""
         current_time = self._get_current_time()
-        self._set_status(f"The time is {current_time}")
-        # TODO: Use TTS to actually speak the time
+        
+        if self.app.announce_time():
+            self._set_status(f"Announced: {current_time}")
+        else:
+            # TTS not available, just show status
+            self._set_status(f"The time is {current_time}")
+        
         logger.info(f"Time announced: {current_time}")
 
     def _on_settings(self, event: wx.CommandEvent) -> None:
