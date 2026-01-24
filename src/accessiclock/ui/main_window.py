@@ -100,10 +100,14 @@ class MainWindow(wx.Frame):
         clock_label = wx.StaticText(panel, label="Clock:")
         clock_sizer.Add(clock_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
 
+        # Get available clocks from app
+        clock_choices = self.app.get_available_clocks()
+        current_clock = self._get_clock_display_name(self.app.selected_clock)
+
         self.clock_selection = wx.ComboBox(
             panel,
-            choices=["Default", "Westminster", "Digital", "Nature"],
-            value="Default",
+            choices=clock_choices,
+            value=current_clock if current_clock in clock_choices else clock_choices[0],
             style=wx.CB_READONLY,
             name="Clock pack selection",
         )
@@ -232,21 +236,41 @@ class MainWindow(wx.Frame):
         """Get the current time as a formatted string."""
         return datetime.now().strftime(TIME_FORMAT_12H)
 
+    def _get_clock_display_name(self, pack_id: str) -> str:
+        """Get the display name for a clock pack ID."""
+        if self.app.clock_pack_loader:
+            pack_info = self.app.clock_pack_loader.get_pack(pack_id)
+            if pack_info:
+                return pack_info.name
+        return pack_id.title()
+
+    def _get_clock_pack_id(self, display_name: str) -> str:
+        """Get the pack ID for a clock display name."""
+        if self.app.clock_pack_loader:
+            for pack_id, pack_info in self.app.clock_pack_loader._cache.items():
+                if pack_info.name == display_name:
+                    return pack_id
+        return display_name.lower()
+
     # --- Event Handlers ---
 
     def _on_clock_tick(self, event: wx.TimerEvent) -> None:
         """Handle clock timer tick."""
         self.clock_display.SetValue(self._get_current_time())
 
-        # TODO: Check for chime intervals and play sounds
+        # Check for chime intervals and play sounds
+        chime_played = self.app.check_and_play_chime()
+        if chime_played:
+            self._set_status(f"Playing {chime_played.replace('_', ' ')} chime")
 
     def _on_clock_changed(self, event: wx.CommandEvent) -> None:
         """Handle clock pack selection change."""
-        selection = self.clock_selection.GetValue()
-        self.app.selected_clock = selection.lower()
-        self._set_status(f"Clock changed to: {selection}")
+        display_name = self.clock_selection.GetValue()
+        pack_id = self._get_clock_pack_id(display_name)
+        self.app.selected_clock = pack_id
+        self._set_status(f"Clock changed to: {display_name}")
         self.app.save_config()
-        logger.info(f"Clock pack changed to: {selection}")
+        logger.info(f"Clock pack changed to: {pack_id} ({display_name})")
 
     def _on_change_volume(self, event: wx.CommandEvent) -> None:
         """Handle volume button press - cycle through volume levels."""
