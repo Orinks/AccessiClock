@@ -1,0 +1,166 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: pip
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[build]"
+
+    - name: Get version
+      id: version
+      run: |
+        $version = python -c "from src.accessiclock import __version__; print(__version__)"
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+
+    - name: Build executable
+      run: |
+        pyinstaller --name AccessiClock `
+          --windowed `
+          --onedir `
+          --icon=assets/icon.ico `
+          --add-data "src/accessiclock/clocks;clocks" `
+          --hidden-import=pyttsx3.drivers `
+          --hidden-import=pyttsx3.drivers.sapi5 `
+          src/accessiclock/main.py
+      shell: pwsh
+
+    - name: Create ZIP
+      run: |
+        Compress-Archive -Path dist/AccessiClock -DestinationPath "AccessiClock-${{ steps.version.outputs.version }}-Windows.zip"
+      shell: pwsh
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build
+        path: AccessiClock-*.zip
+
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: pip
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[build]"
+
+    - name: Get version
+      id: version
+      run: |
+        version=$(python -c "from src.accessiclock import __version__; print(__version__)")
+        echo "version=$version" >> $GITHUB_OUTPUT
+
+    - name: Build app
+      run: |
+        pyinstaller --name AccessiClock \
+          --windowed \
+          --onedir \
+          --add-data "src/accessiclock/clocks:clocks" \
+          --hidden-import=pyttsx3.drivers \
+          --hidden-import=pyttsx3.drivers.nsss \
+          src/accessiclock/main.py
+
+    - name: Create DMG
+      run: |
+        # Simple DMG creation
+        mkdir -p dmg_contents
+        cp -r dist/AccessiClock.app dmg_contents/ 2>/dev/null || cp -r dist/AccessiClock dmg_contents/
+        hdiutil create -volname "AccessiClock" -srcfolder dmg_contents -ov -format UDZO "AccessiClock-${{ steps.version.outputs.version }}.dmg"
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-build
+        path: AccessiClock-*.dmg
+
+  release:
+    name: Create Release
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get version
+      id: version
+      run: |
+        version=$(python -c "from src.accessiclock import __version__; print(__version__)")
+        echo "version=$version" >> $GITHUB_OUTPUT
+
+    - name: Download Windows artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-build
+        path: artifacts/
+
+    - name: Download macOS artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: macos-build
+        path: artifacts/
+
+    - name: List artifacts
+      run: ls -la artifacts/
+
+    - name: Create release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: AccessiClock v${{ steps.version.outputs.version }}
+        body: |
+          ## AccessiClock v${{ steps.version.outputs.version }}
+
+          An accessible talking clock for visually impaired users.
+
+          ### Downloads
+          - **Windows:** AccessiClock-${{ steps.version.outputs.version }}-Windows.zip
+          - **macOS:** AccessiClock-${{ steps.version.outputs.version }}.dmg
+
+          ### Features
+          - Screen reader compatible (NVDA, JAWS, VoiceOver)
+          - Customizable chime intervals
+          - Multiple clock pack themes
+          - Text-to-speech time announcements
+          - Quiet hours configuration
+
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+        files: artifacts/*
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
