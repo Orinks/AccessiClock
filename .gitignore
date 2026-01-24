@@ -70,10 +70,12 @@ Thumbs.db
 logs/
 briefcase.*.log
 
-# Application specific
+# Application specific - audio files
 *.wav
 *.mp3
 *.ogg
+# But keep built-in clock pack sounds
+!src/accessiclock/clocks/**/*.wav
 !**/resources/sounds/.gitkeep
 
 # Build artifacts

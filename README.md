@@ -1,32 +1,46 @@
-# AccessiClock
+# AccessiClock 🕐
 
-An accessible talking clock application designed for visually impaired users, featuring customizable clock packs, TTS announcements, and AI voice support.
-
-Built with wxPython for native Windows accessibility and screen reader compatibility.
+An accessible talking clock application designed for visually impaired users, built with wxPython for native Windows accessibility support.
 
 ## Features
 
-### ✅ Implemented
-- **Large Digital Clock Display**: Easy-to-read time display with automatic updates
-- **Full Keyboard Navigation**: Tab through all controls with logical focus order
-- **Screen Reader Accessible**: Works with NVDA, JAWS, and Windows Narrator
-- **Volume Control**: Adjustable audio volume
-- **Chime Configuration**: Enable/disable hourly, half-hour, and quarter-hour chimes
-- **Test Functionality**: Preview clock sounds
+- **Screen Reader Accessible**: Fully compatible with NVDA, JAWS, and Windows Narrator
+- **Customizable Chimes**: Hourly, half-hour, and quarter-hour chime options
+- **Clock Packs**: Switchable clock sound themes (Default, Digital, Westminster)
+- **Text-to-Speech**: Announces time on demand with customizable voice settings
+- **Quiet Hours**: Automatically silence chimes during specified times
+- **Portable Mode**: Run from USB drive without installation
 
-### 🔄 Planned
-- **Clock Packs**: Customizable sound themes (Westminster, Nature, Digital, etc.)
-- **TTS Announcements**: Speak the time using Windows SAPI or AI voices
-- **AI Voices**: ElevenLabs and OpenAI TTS integration
-- **Community Clocks**: Browse and install clock packs from GitHub
-- **Alarms & Timers**: Set reminders and countdown timers
-- **System Tray**: Minimize to tray with quick access
+## Screenshot
+
+```
+┌─────────────────────────────────────────┐
+│ AccessiClock                        _ □ X│
+├─────────────────────────────────────────┤
+│ Current Time:                           │
+│ ┌─────────────────────────────────────┐ │
+│ │           3:45:30 PM                │ │
+│ └─────────────────────────────────────┘ │
+│ Ready. Use Tab to navigate controls.    │
+│                                         │
+│ Clock: [Default        ▼]               │
+│ Volume: 50%        [Change Volume]      │
+│                                         │
+│ Chime Intervals:                        │
+│ [✓] Hourly chimes                       │
+│ [ ] Half-hour chimes                    │
+│ [ ] Quarter-hour chimes                 │
+│                                         │
+│ [Test Chime] [Announce Time] [Settings] │
+└─────────────────────────────────────────┘
+```
 
 ## Installation
 
 ### Requirements
-- Windows 10 or later
+
 - Python 3.10 or higher
+- Windows 10/11 (primary), Linux/macOS (limited support)
 
 ### From Source
 
@@ -38,6 +52,7 @@ cd AccessiClock
 # Create virtual environment
 python -m venv .venv
 .venv\Scripts\activate  # Windows
+# or: source .venv/bin/activate  # Linux/macOS
 
 # Install dependencies
 pip install -e .
@@ -46,104 +61,150 @@ pip install -e .
 python -m accessiclock
 ```
 
-### Quick Start (Windows)
-```powershell
-.\start.ps1
+### Development Installation
+
+```bash
+pip install -e ".[dev]"
 ```
 
 ## Usage
 
 ### Keyboard Shortcuts
-- **Tab**: Navigate between controls
-- **Space**: Announce current time
-- **F5**: Test current chime
-- **Alt+V**: Change volume
-- **Ctrl+,**: Open settings
+
+| Key | Action |
+|-----|--------|
+| Space | Announce current time |
+| F5 | Test chime sound |
+| Tab | Navigate between controls |
+| Ctrl+, | Open settings |
+| Alt+F4 | Exit application |
 
 ### Clock Packs
 
-Clock packs are located in the `clocks/` directory. Each pack contains:
-- `clock.json` - Manifest with metadata
-- Audio files for different chimes (hour, half-hour, etc.)
+AccessiClock includes three built-in clock packs:
 
-## Project Structure
+- **Default**: Pleasant melodic chimes
+- **Digital**: Simple electronic beeps
+- **Westminster**: Classic Westminster-style chimes
+
+You can also import custom clock packs or create your own.
+
+### Creating Custom Clock Packs
+
+A clock pack is a folder containing:
 
 ```
-AccessiClock/
-├── src/accessiclock/
-│   ├── app.py              # Main wxPython application
-│   ├── main.py             # Entry point
-│   ├── constants.py        # App constants
-│   ├── paths.py            # Path management
-│   ├── ui/
-│   │   ├── main_window.py  # Main clock window
-│   │   └── dialogs/        # Settings, clock manager, etc.
-│   ├── audio/
-│   │   └── player.py       # Audio playback (sound_lib)
-│   ├── clocks/             # Clock pack resources
-│   └── services/           # Background services
-├── tests/
-├── pyproject.toml
-└── README.md
+my_clock_pack/
+├── clock.json      # Manifest file (required)
+├── hour.wav        # Hourly chime sound
+├── half_hour.wav   # Half-hour chime sound
+├── quarter_hour.wav # Quarter-hour chime sound
+├── preview.wav     # Preview/test sound
+└── startup.wav     # Startup sound (optional)
 ```
 
-## Accessibility
+Example `clock.json`:
 
-This application prioritizes accessibility:
+```json
+{
+  "name": "My Custom Clock",
+  "author": "Your Name",
+  "description": "A custom clock pack.",
+  "version": "1.0.0",
+  "sounds": {
+    "hour": "hour.wav",
+    "half_hour": "half_hour.wav",
+    "quarter_hour": "quarter_hour.wav",
+    "preview": "preview.wav"
+  }
+}
+```
 
-- ✅ **Screen Reader Compatible**: Native Windows widgets for NVDA/JAWS/Narrator
-- ✅ **Keyboard Navigation**: All features accessible via keyboard
-- ✅ **Logical Tab Order**: Intuitive focus flow
-- ✅ **Status Announcements**: Changes announced to assistive technology
+## Configuration
 
-## Technology Stack
-
-- **Framework**: [wxPython](https://wxpython.org/) 4.2+
-- **Audio**: [sound_lib](https://github.com/accessibleapps/sound_lib) (BASS wrapper)
-- **TTS**: pyttsx3 (SAPI5) + optional AI voices
-- **Packaging**: PyInstaller
+Settings are stored in:
+- Windows: `%APPDATA%\AccessiClock\config.json`
+- Linux: `~/.config/AccessiClock/config.json`
+- Portable mode: `./data/config.json`
 
 ## Development
 
 ### Running Tests
+
 ```bash
-pytest tests/ -v
+# Run all tests
+PYTHONPATH=src pytest tests/ -v
+
+# Run with coverage
+PYTHONPATH=src pytest tests/ --cov=accessiclock
 ```
 
-### Code Style
-```bash
-ruff check src/
-ruff format src/
+### Project Structure
+
+```
+AccessiClock/
+├── src/accessiclock/
+│   ├── __init__.py
+│   ├── app.py              # Main application class
+│   ├── main.py             # Entry point
+│   ├── constants.py        # Application constants
+│   ├── paths.py            # Path management
+│   ├── audio/
+│   │   ├── player.py       # Audio playback
+│   │   └── tts_engine.py   # Text-to-speech
+│   ├── services/
+│   │   ├── clock_service.py     # Chime scheduling
+│   │   └── clock_pack_loader.py # Clock pack management
+│   ├── clocks/             # Built-in clock packs
+│   │   ├── default/
+│   │   ├── digital/
+│   │   └── westminster/
+│   └── ui/
+│       ├── main_window.py  # Main window
+│       └── dialogs/        # Settings & clock manager
+├── tests/                  # Unit tests
+├── scripts/                # Utility scripts
+└── pyproject.toml         # Project configuration
 ```
 
-## Roadmap
+### Generate Placeholder Sounds
 
-See [MIGRATION.md](MIGRATION.md) for detailed migration status and future plans.
+```bash
+python scripts/generate_sounds.py
+```
 
-### Phases
-1. ✅ Core UI with accessibility (wxPython)
-2. 🔄 Clock pack system
-3. ⏳ TTS integration
-4. ⏳ Settings persistence
-5. ⏳ Community clocks
-6. ⏳ AI voice support
-7. ⏳ Installer & distribution
+## Accessibility
 
-## Contributing
+AccessiClock is designed with accessibility as a primary goal:
 
-Contributions welcome! Please ensure:
-- All UI elements maintain accessibility compliance
-- Screen reader compatibility is tested with NVDA
-- Code follows ruff formatting
+- All controls are keyboard accessible
+- Logical tab order for screen reader navigation
+- Status messages announced via accessible labels
+- High contrast support (uses system colors)
+- Large, readable clock display
+- Native Windows widgets for automatic accessibility support
 
 ## License
 
-MIT License - See LICENSE file for details.
+MIT License - see LICENSE file for details.
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Write tests for new functionality
+4. Ensure all tests pass
+5. Submit a pull request
 
 ## Credits
 
-Inspired by Steve's Talking Clock and built for the accessibility community.
+- Built with [wxPython](https://wxpython.org/)
+- TTS powered by [pyttsx3](https://pyttsx3.readthedocs.io/)
+- Accessibility testing with [NVDA](https://www.nvaccess.org/)
 
----
+## Support
 
-*Part of the Accessi* suite of accessible applications.*
+- Report issues on [GitHub Issues](https://github.com/orinks/AccessiClock/issues)
+- For accessibility feedback, please mention your screen reader and version

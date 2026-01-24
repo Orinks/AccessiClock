@@ -1,7 +1,6 @@
 """Dialog windows for AccessiClock."""
 
-# TODO: Import dialogs as they're implemented
-# from .settings_dialog import SettingsDialog
-# from .clock_manager_dialog import ClockManagerDialog
+from .clock_manager_dialog import ClockManagerDialog
+from .settings_dialog import SettingsDialog
 
-__all__ = []
+__all__ = ["SettingsDialog", "ClockManagerDialog"]

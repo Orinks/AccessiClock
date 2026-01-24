@@ -13,6 +13,7 @@ license = {text = "MIT"}
 requires-python = ">=3.10"
 dependencies = [
     "wxPython>=4.2.0",
+    "sound_lib @ git+https://github.com/accessibleapps/sound_lib.git",
     "playsound3",
     "pyttsx3",
     "httpx>=0.20.0",

@@ -328,15 +328,42 @@ class MainWindow(wx.Frame):
 
     def _on_settings(self, event: wx.CommandEvent) -> None:
         """Handle settings button/menu."""
-        self._set_status("Settings dialog coming soon")
-        # TODO: Open settings dialog
-        logger.info("Settings requested")
+        from .dialogs import SettingsDialog
+        
+        dlg = SettingsDialog(self, self.app)
+        dlg.ShowModal()
+        dlg.Destroy()
+        
+        self._set_status("Settings updated")
+        logger.info("Settings dialog closed")
 
     def _on_manage_clocks(self, event: wx.CommandEvent) -> None:
         """Handle manage clocks menu item."""
-        self._set_status("Clock manager coming soon")
-        # TODO: Open clock manager dialog
-        logger.info("Clock manager requested")
+        from .dialogs import ClockManagerDialog
+        
+        dlg = ClockManagerDialog(self, self.app)
+        dlg.ShowModal()
+        dlg.Destroy()
+        
+        # Refresh clock selection in case packs changed
+        self._refresh_clock_choices()
+        self._set_status("Clock manager closed")
+        logger.info("Clock manager dialog closed")
+    
+    def _refresh_clock_choices(self) -> None:
+        """Refresh the clock pack dropdown."""
+        clock_choices = self.app.get_available_clocks()
+        current_selection = self.clock_selection.GetValue()
+        
+        self.clock_selection.Clear()
+        for choice in clock_choices:
+            self.clock_selection.Append(choice)
+        
+        # Try to restore selection
+        if current_selection in clock_choices:
+            self.clock_selection.SetValue(current_selection)
+        elif clock_choices:
+            self.clock_selection.SetSelection(0)
 
     def _on_about(self, event: wx.CommandEvent) -> None:
         """Show about dialog."""
