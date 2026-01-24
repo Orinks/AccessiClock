@@ -17,16 +17,17 @@ logger = logging.getLogger(__name__)
 _bass_initialized = False
 _use_sound_lib = False
 
-# Try to import sound_lib (Windows only)
+# Try to import sound_lib (cross-platform: Windows, macOS, Linux)
 try:
-    if sys.platform == "win32":
-        from sound_lib import stream
-        from sound_lib.main import BASS_Free
+    from sound_lib import stream
+    from sound_lib.main import BASS_Free
 
-        _use_sound_lib = True
-        logger.debug("sound_lib available")
+    _use_sound_lib = True
+    logger.debug("sound_lib available")
 except ImportError:
     logger.debug("sound_lib not available, will use fallback")
+except Exception as e:
+    logger.debug(f"sound_lib initialization failed: {e}")
 
 
 class AudioPlayer:

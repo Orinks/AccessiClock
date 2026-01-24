@@ -89,6 +89,16 @@ class TestPlaySound:
 
     def test_play_sound_with_fallback(self):
         """play_sound should use fallback when sound_lib unavailable."""
+        # Skip if neither playsound3 nor sound_lib available
+        try:
+            from playsound3 import playsound
+            playsound_available = True
+        except ImportError:
+            playsound_available = False
+        
+        if not playsound_available:
+            pytest.skip("playsound3 not available")
+        
         with patch("accessiclock.audio.player._use_sound_lib", False):
             from accessiclock.audio.player import AudioPlayer
             
@@ -99,13 +109,10 @@ class TestPlaySound:
                 temp_path = f.name
             
             try:
-                # Mock playsound to avoid actually playing
-                with patch("accessiclock.audio.player.playsound") as mock_playsound:
+                # Mock playsound in the module where it's used
+                import accessiclock.audio.player as player_module
+                with patch.object(player_module, "playsound", create=True) as mock_playsound:
                     player.play_sound(temp_path)
-                    # playsound is called in a thread, so we check it was imported
-            except ImportError:
-                # playsound3 not installed, that's okay
-                pass
             finally:
                 Path(temp_path).unlink(missing_ok=True)
 
@@ -136,19 +143,169 @@ class TestCleanup:
 
     def test_cleanup_stops_playback(self):
         """cleanup should stop any current playback."""
-        with patch("accessiclock.audio.player._use_sound_lib", True):
-            with patch("accessiclock.audio.player._bass_initialized", True):
-                from accessiclock.audio.player import AudioPlayer
-                
-                # Create player with mocked stream
-                with patch("accessiclock.audio.player.stream") as mock_stream:
-                    with patch("accessiclock.audio.player.BASS_Free"):
-                        player = AudioPlayer.__new__(AudioPlayer)
-                        player._volume = 50
-                        mock_current = MagicMock()
-                        player._current_stream = mock_current
-                        
-                        player.cleanup()
-                        
-                        mock_current.stop.assert_called_once()
-                        mock_current.free.assert_called_once()
+        from accessiclock.audio.player import AudioPlayer
+        
+        # Create player instance directly with mocked stream
+        player = AudioPlayer.__new__(AudioPlayer)
+        player._volume = 50
+        mock_current = MagicMock()
+        player._current_stream = mock_current
+        
+        # Mock cleanup to avoid BASS_Free issues
+        import accessiclock.audio.player as player_module
+        original_use_sound_lib = player_module._use_sound_lib
+        original_bass_init = player_module._bass_initialized
+        
+        try:
+            player_module._use_sound_lib = True
+            player_module._bass_initialized = False  # Skip BASS_Free
+            
+            player.cleanup()
+            
+            mock_current.stop.assert_called_once()
+            mock_current.free.assert_called_once()
+        finally:
+            player_module._use_sound_lib = original_use_sound_lib
+            player_module._bass_initialized = original_bass_init
+
+
+class TestSoundLibIntegration:
+    """Test sound_lib integration (cross-platform)."""
+
+    def test_sound_lib_play_creates_stream(self):
+        """Playing with sound_lib should create a FileStream."""
+        from accessiclock.audio.player import AudioPlayer
+        import accessiclock.audio.player as player_module
+        
+        # Create a mock stream module
+        mock_stream_module = MagicMock()
+        mock_file_stream = MagicMock()
+        mock_stream_module.FileStream.return_value = mock_file_stream
+        
+        player = AudioPlayer.__new__(AudioPlayer)
+        player._volume = 50
+        player._current_stream = None
+        
+        # Create temp file
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            temp_path = f.name
+        
+        try:
+            # Patch stream in the module
+            with patch.object(player_module, "stream", mock_stream_module, create=True):
+                player._play_with_sound_lib(Path(temp_path))
+            
+            # Verify FileStream was created with correct path
+            mock_stream_module.FileStream.assert_called_once()
+            call_kwargs = mock_stream_module.FileStream.call_args
+            assert temp_path in str(call_kwargs)
+            
+            # Verify play was called
+            mock_file_stream.play.assert_called_once()
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+
+    def test_sound_lib_sets_volume_on_stream(self):
+        """Playing should set volume on the stream."""
+        from accessiclock.audio.player import AudioPlayer
+        import accessiclock.audio.player as player_module
+        
+        mock_stream_module = MagicMock()
+        mock_file_stream = MagicMock()
+        mock_stream_module.FileStream.return_value = mock_file_stream
+        
+        player = AudioPlayer.__new__(AudioPlayer)
+        player._volume = 75  # 75%
+        player._current_stream = None
+        
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            temp_path = f.name
+        
+        try:
+            with patch.object(player_module, "stream", mock_stream_module, create=True):
+                player._play_with_sound_lib(Path(temp_path))
+            
+            # Verify volume was set to 0.75
+            assert mock_file_stream.volume == 0.75
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+
+    def test_sound_lib_stops_previous_stream(self):
+        """Playing a new sound should stop the previous stream."""
+        from accessiclock.audio.player import AudioPlayer
+        import accessiclock.audio.player as player_module
+        
+        mock_stream_module = MagicMock()
+        mock_old_stream = MagicMock()
+        mock_new_stream = MagicMock()
+        mock_stream_module.FileStream.return_value = mock_new_stream
+        
+        player = AudioPlayer.__new__(AudioPlayer)
+        player._volume = 50
+        player._current_stream = mock_old_stream
+        
+        # Mock stop method
+        player.stop = MagicMock()
+        
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            temp_path = f.name
+        
+        try:
+            with patch.object(player_module, "stream", mock_stream_module, create=True):
+                player._play_with_sound_lib(Path(temp_path))
+            
+            # stop() should have been called (which stops/frees old stream)
+            player.stop.assert_called_once()
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+
+    def test_sound_lib_is_playing_checks_stream(self):
+        """is_playing should check the stream's is_playing property."""
+        from accessiclock.audio.player import AudioPlayer
+        import accessiclock.audio.player as player_module
+        
+        original_use_sound_lib = player_module._use_sound_lib
+        try:
+            player_module._use_sound_lib = True
+            
+            player = AudioPlayer.__new__(AudioPlayer)
+            player._volume = 50
+            
+            # No stream - not playing
+            player._current_stream = None
+            assert player.is_playing() is False
+            
+            # Stream playing
+            mock_stream = MagicMock()
+            mock_stream.is_playing = True
+            player._current_stream = mock_stream
+            assert player.is_playing() is True
+            
+            # Stream stopped
+            mock_stream.is_playing = False
+            assert player.is_playing() is False
+        finally:
+            player_module._use_sound_lib = original_use_sound_lib
+
+    def test_sound_lib_stop_frees_stream(self):
+        """stop should stop and free the current stream."""
+        from accessiclock.audio.player import AudioPlayer
+        import accessiclock.audio.player as player_module
+        
+        original_use_sound_lib = player_module._use_sound_lib
+        try:
+            player_module._use_sound_lib = True
+            
+            player = AudioPlayer.__new__(AudioPlayer)
+            player._volume = 50
+            
+            mock_stream = MagicMock()
+            player._current_stream = mock_stream
+            
+            player.stop()
+            
+            mock_stream.stop.assert_called_once()
+            mock_stream.free.assert_called_once()
+            assert player._current_stream is None
+        finally:
+            player_module._use_sound_lib = original_use_sound_lib
