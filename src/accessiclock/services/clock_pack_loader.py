@@ -6,6 +6,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+
 from ..constants import CLOCK_MANIFEST_FILENAME, SUPPORTED_AUDIO_FORMATS
 
 logger = logging.getLogger(__name__)

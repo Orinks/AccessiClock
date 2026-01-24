@@ -218,12 +218,8 @@ class MainWindow(wx.Frame):
 
     def _setup_keyboard_shortcuts(self) -> None:
         """Set up keyboard shortcuts."""
-        # F5 to test chime, Space to announce time
-        accel_entries = [
-            (wx.ACCEL_NORMAL, wx.WXK_F5, wx.ID_ANY),
-            (wx.ACCEL_NORMAL, wx.WXK_SPACE, wx.ID_ANY),
-        ]
-        # Note: Menu accelerators handle F5 and Space
+        # Keyboard shortcuts are handled via menu accelerators (F5, Space, etc.)
+        # defined in _create_menu_bar()
 
     def _start_clock_timer(self) -> None:
         """Start the clock update timer."""

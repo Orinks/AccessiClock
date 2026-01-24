@@ -297,9 +297,9 @@ class ClockManagerDialog(wx.Dialog):
         Raises:
             ValueError: If the pack is invalid.
         """
-        import zipfile
         import json
         import tempfile
+        import zipfile
         
         user_dir = self.app.paths.user_clocks_dir
         user_dir.mkdir(parents=True, exist_ok=True)
