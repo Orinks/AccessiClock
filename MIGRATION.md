@@ -76,27 +76,28 @@ AccessiClock/
 - [x] Create basic app.py and main_window.py
 - [x] Port AudioPlayer (mostly unchanged)
 
-### Phase M2: Core Clock UI
-- [ ] Main window with clock display
-- [ ] Time update loop (wx.Timer instead of asyncio)
-- [ ] Basic controls (volume, test chime)
-- [ ] Screen reader accessibility testing
+### Phase M2: Core Clock UI ✅
+- [x] Main window with clock display
+- [x] Time update loop (wx.Timer instead of asyncio)
+- [x] Basic controls (volume, test chime)
+- [x] Screen reader accessibility testing (structure in place)
 
-### Phase M3: Clock Pack System
-- [ ] Create clock.json schema
-- [ ] Clock pack loader
-- [ ] Clock selection dropdown
-- [ ] Preview functionality
+### Phase M3: Clock Pack System ✅
+- [x] Create clock.json schema
+- [x] ClockPackLoader service
+- [x] Clock selection dropdown (populated from discovered packs)
+- [x] Preview functionality (via play_chime)
 
-### Phase M4: Settings & Persistence
-- [ ] Settings dialog with tabs
-- [ ] JSON config file
-- [ ] Remember window position
+### Phase M4: Settings & Persistence ✅ (partial)
+- [x] JSON config file (load/save)
+- [ ] Settings dialog with tabs (TODO)
+- [ ] Remember window position (TODO)
 
-### Phase M5: TTS Integration
-- [ ] SAPI5 wrapper for Windows TTS
-- [ ] Time announcement formats
-- [ ] Voice selection
+### Phase M5: TTS Integration ✅
+- [x] TTSEngine with SAPI5 wrapper (pyttsx3)
+- [x] Time announcement formats (simple, natural, precise)
+- [x] Voice selection (list_voices, set_voice)
+- [x] Announce Time button wired up
 
 ### Phase M6: System Tray
 - [ ] Tray icon with menu
