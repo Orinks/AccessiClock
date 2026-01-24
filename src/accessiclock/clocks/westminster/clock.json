@@ -1,0 +1,13 @@
+{
+  "name": "Westminster",
+  "author": "AccessiClock Team",
+  "description": "Classic Westminster/Big Ben style chimes with melodic quarter-hour sequences.",
+  "version": "1.0.0",
+  "sounds": {
+    "hour": "hour.wav",
+    "half_hour": "half_hour.wav",
+    "quarter_hour": "quarter.wav",
+    "three_quarter": "three_quarter.wav",
+    "preview": "preview.wav"
+  }
+}

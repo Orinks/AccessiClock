@@ -1,0 +1,12 @@
+{
+  "name": "Digital",
+  "author": "AccessiClock Team", 
+  "description": "Simple digital beeps and tones for a modern, minimal clock experience.",
+  "version": "1.0.0",
+  "sounds": {
+    "hour": "hour_beep.wav",
+    "half_hour": "half_beep.wav",
+    "quarter_hour": "quarter_beep.wav",
+    "preview": "preview.wav"
+  }
+}
