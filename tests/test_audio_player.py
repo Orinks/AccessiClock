@@ -197,8 +197,11 @@ class TestSoundLibIntegration:
             
             # Verify FileStream was created with correct path
             mock_stream_module.FileStream.assert_called_once()
-            call_kwargs = mock_stream_module.FileStream.call_args
-            assert temp_path in str(call_kwargs)
+            call_args = mock_stream_module.FileStream.call_args
+            # Check if temp_path was passed as positional or keyword arg
+            passed_path = call_args.kwargs.get("file") or (call_args.args[0] if call_args.args else None)
+            assert passed_path is not None
+            assert str(Path(passed_path)) == str(Path(temp_path))
             
             # Verify play was called
             mock_file_stream.play.assert_called_once()
