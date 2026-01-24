@@ -7,7 +7,6 @@ Main application class with screen reader accessibility support.
 from __future__ import annotations
 
 import logging
-import sys
 from typing import TYPE_CHECKING
 
 import wx
@@ -296,10 +295,9 @@ class AccessiClockApp(wx.App):
         current_time = datetime.now().time()
         chime_type = self.clock_service.should_chime_now(current_time)
 
-        if chime_type:
-            if self.play_chime(chime_type):
-                self.clock_service.mark_chimed(current_time)
-                return chime_type
+        if chime_type and self.play_chime(chime_type):
+            self.clock_service.mark_chimed(current_time)
+            return chime_type
 
         return None
 

@@ -8,7 +8,6 @@ Falls back to playsound3 on other platforms.
 from __future__ import annotations
 
 import logging
-import sys
 from pathlib import Path
 
 logger = logging.getLogger(__name__)

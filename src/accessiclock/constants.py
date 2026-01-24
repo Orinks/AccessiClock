@@ -1,7 +1,5 @@
 """Application constants for AccessiClock."""
 
-from pathlib import Path
-
 # Application info
 APP_NAME = "AccessiClock"
 APP_VERSION = "0.1.0"

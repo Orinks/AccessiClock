@@ -6,6 +6,7 @@ Supports SAPI5 (Windows) via pyttsx3, with fallback to dummy engine.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from datetime import date, time
 from typing import Literal
@@ -239,7 +240,5 @@ class TTSEngine:
     def cleanup(self) -> None:
         """Clean up TTS resources."""
         if self._engine:
-            try:
+            with contextlib.suppress(Exception):
                 self._engine.stop()
-            except Exception:
-                pass

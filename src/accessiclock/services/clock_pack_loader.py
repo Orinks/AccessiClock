@@ -6,8 +6,6 @@ import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
-
 from ..constants import CLOCK_MANIFEST_FILENAME, SUPPORTED_AUDIO_FORMATS
 
 logger = logging.getLogger(__name__)
@@ -124,7 +122,7 @@ class ClockPackLoader:
             with open(manifest_path, encoding="utf-8") as f:
                 manifest = json.load(f)
         except json.JSONDecodeError as e:
-            raise ClockPackError(f"Invalid JSON in manifest: {e}")
+            raise ClockPackError(f"Invalid JSON in manifest: {e}") from e
         
         # Validate required fields
         for field_name in self.REQUIRED_FIELDS:
@@ -153,7 +151,7 @@ class ClockPackLoader:
         """
         errors: list[str] = []
         
-        for sound_name, filename in pack_info.sounds.items():
+        for _sound_name, filename in pack_info.sounds.items():
             sound_path = pack_info.path / filename
             
             if not sound_path.exists():

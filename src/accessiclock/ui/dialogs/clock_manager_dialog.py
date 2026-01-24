@@ -15,7 +15,6 @@ import wx
 
 if TYPE_CHECKING:
     from ...app import AccessiClockApp
-    from ...services.clock_pack_loader import ClockPackInfo
 
 logger = logging.getLogger(__name__)
 
