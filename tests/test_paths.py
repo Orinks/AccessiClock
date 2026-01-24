@@ -1,11 +1,8 @@
 """Tests for accessiclock.paths module."""
 
-import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 from accessiclock.paths import Paths
 
@@ -44,11 +41,10 @@ class TestDataDirectory:
 
     def test_data_dir_created_if_missing(self):
         """data_dir should create directory if it doesn't exist."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.dict("os.environ", {"APPDATA": tmpdir}):
-                paths = Paths()
-                data_dir = paths.data_dir
-                assert data_dir.exists()
+        with tempfile.TemporaryDirectory() as tmpdir, patch.dict("os.environ", {"APPDATA": tmpdir}):
+            paths = Paths()
+            data_dir = paths.data_dir
+            assert data_dir.exists()
 
     def test_portable_mode_uses_app_dir(self):
         """In portable mode, data_dir should be under app_dir."""

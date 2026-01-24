@@ -3,10 +3,7 @@
 TDD: These tests are written before the implementation.
 """
 
-from datetime import datetime, time
-from unittest.mock import MagicMock, patch
-
-import pytest
+from datetime import time
 
 
 class TestChimeScheduling:

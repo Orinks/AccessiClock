@@ -94,7 +94,7 @@ class TestClockPackManifest:
 
     def test_manifest_missing_required_fields(self):
         """Should raise error for manifest missing required fields."""
-        from accessiclock.services.clock_pack_loader import ClockPackLoader, ClockPackError
+        from accessiclock.services.clock_pack_loader import ClockPackError, ClockPackLoader
         
         with tempfile.TemporaryDirectory() as tmpdir:
             pack_dir = Path(tmpdir) / "incomplete"

@@ -1,6 +1,5 @@
 """Tests for accessiclock.constants module."""
 
-import pytest
 
 from accessiclock.constants import (
     APP_NAME,
@@ -77,7 +76,7 @@ class TestVolumeLevels:
         assert VOLUME_LEVELS[-1] == 100
 
     def test_volume_levels_are_ascending(self):
-        assert VOLUME_LEVELS == sorted(VOLUME_LEVELS)
+        assert sorted(VOLUME_LEVELS) == VOLUME_LEVELS
 
     def test_default_volume_in_levels(self):
         assert DEFAULT_VOLUME in VOLUME_LEVELS

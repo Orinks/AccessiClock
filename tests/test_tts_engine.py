@@ -4,7 +4,7 @@ TDD: These tests are written before the implementation.
 """
 
 from datetime import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -83,6 +83,7 @@ class TestTimeFormatting:
     def test_format_time_with_date(self):
         """Should optionally include date."""
         from datetime import datetime
+
         from accessiclock.audio.tts_engine import TTSEngine
         
         engine = TTSEngine()
@@ -100,7 +101,7 @@ class TestSpeech:
 
     def test_speak_uses_engine(self):
         """speak() should use the TTS engine when pyttsx3 available."""
-        from accessiclock.audio.tts_engine import TTSEngine, _PYTTSX3_AVAILABLE
+        from accessiclock.audio.tts_engine import _PYTTSX3_AVAILABLE, TTSEngine
         
         if not _PYTTSX3_AVAILABLE:
             # Can't test real engine without pyttsx3
@@ -146,7 +147,7 @@ class TestVoiceSelection:
 
     def test_set_voice_by_name(self):
         """Should set voice by name when pyttsx3 available."""
-        from accessiclock.audio.tts_engine import TTSEngine, _PYTTSX3_AVAILABLE
+        from accessiclock.audio.tts_engine import _PYTTSX3_AVAILABLE, TTSEngine
         
         if not _PYTTSX3_AVAILABLE:
             # Test that dummy engine returns False
