@@ -1,7 +1,11 @@
 """Services for AccessiClock."""
 
-# TODO: Import services as they're implemented
-# from .clock_service import ClockService
-# from .alarm_service import AlarmService
+from .clock_pack_loader import ClockPackError, ClockPackInfo, ClockPackLoader
+from .clock_service import ClockService
 
-__all__ = []
+__all__ = [
+    "ClockService",
+    "ClockPackLoader",
+    "ClockPackInfo",
+    "ClockPackError",
+]
