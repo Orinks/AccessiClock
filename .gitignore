@@ -90,3 +90,7 @@ briefcase.*.log
 *.tmp
 *.bak
 *.log
+
+# UV package manager
+uv.lock
+.uv/
