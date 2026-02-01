@@ -6,7 +6,6 @@ Uses sound_lib library for thread-safe audio playback.
 import logging
 from pathlib import Path
 from sound_lib import stream
-from sound_lib.main import BassError, bass_call_0, BASS_Free
 
 logger = logging.getLogger(__name__)
 
@@ -171,11 +170,5 @@ class AudioPlayer:
             except Exception as e:
                 logger.warning(f"Error during AudioPlayer cleanup: {e}")
         
-        # Free BASS library resources
-        if _bass_initialized:
-            try:
-                BASS_Free()
-                _bass_initialized = False
-                logger.info("BASS audio system freed")
-            except Exception as e:
-                logger.warning(f"Error freeing BASS audio system: {e}")
+        # Note: BASS library cleanup is handled automatically by sound_lib
+        # when the Output object is garbage collected
