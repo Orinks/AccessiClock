@@ -10,7 +10,7 @@ import math
 import struct
 import logging
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,6 @@ Tests for AudioPlayer class.
 Following TDD approach - these tests are written before implementation.
 """
 
-import os
 import pytest
 from pathlib import Path
 from accessibletalkingclock.audio import AudioPlayer
@@ -86,7 +85,7 @@ class TestAudioPlayerPlayback:
     
     def test_is_playing_returns_false_initially(self, audio_player):
         """is_playing() should return False when no sound is playing."""
-        assert audio_player.is_playing() == False
+        assert not audio_player.is_playing()
     
     def test_is_playing_returns_true_during_playback(self, audio_player, test_sound_path):
         """is_playing() should return True while sound is playing."""
@@ -104,7 +103,7 @@ class TestAudioPlayerPlayback:
         audio_player.stop()
         import time
         time.sleep(0.05)
-        assert audio_player.is_playing() == False
+        assert not audio_player.is_playing()
 
 
 class TestAudioPlayerErrorHandling:
