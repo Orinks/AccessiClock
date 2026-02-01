@@ -2,11 +2,22 @@
 Integration tests for soundpack system with real audio files.
 
 Tests that the generated soundpacks can be discovered and loaded correctly.
+These tests require actual sound files and are skipped on CI.
 """
 
 import pytest
 from pathlib import Path
 from accessibletalkingclock.soundpack import Soundpack, SoundpackManager
+
+
+# Check if real sound files exist
+_sounds_dir = Path(__file__).parent.parent / "src" / "accessibletalkingclock" / "resources" / "sounds"
+_has_sound_files = (_sounds_dir / "classic" / "hour.wav").exists()
+
+pytestmark = pytest.mark.skipif(
+    not _has_sound_files,
+    reason="Integration tests require real sound files (run generate_sounds.py first)"
+)
 
 
 class TestRealSoundpacks:
