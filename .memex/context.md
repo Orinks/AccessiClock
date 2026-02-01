@@ -13,14 +13,24 @@ Desktop clock application designed specifically for visually impaired users usin
 
 ### Package Management
 - **uv**: Primary package manager (preferred over pip/poetry/conda)
-- Virtual environment location: `.venv/` at project root
+- Virtual environment location: `.venv/` at project root (NOT in briefcase app subdirectory)
 - Key dependencies: `briefcase`, `toga`, `sound_lib` (Phase 2+)
 
 ### Development Commands
 ```bash
-# Running the application
-cd accessibletalkingclock
-python -m briefcase dev
+# CRITICAL: Virtual environment activation and briefcase dev execution
+# The .venv is at PROJECT ROOT (accessible_talking_clock/)
+# BUT briefcase dev MUST be run from the briefcase app directory (accessibletalkingclock/)
+
+# Correct workflow:
+cd C:\Users\joshu\Workspace\accessible_talking_clock  # Project root
+.venv\Scripts\Activate.ps1  # PowerShell (NOT activate.bat)
+cd accessibletalkingclock   # Briefcase app directory - MUST cd here before briefcase dev
+python -m briefcase dev     # Run the app (from accessibletalkingclock/ directory)
+
+# WRONG: Running briefcase dev from project root will fail
+# cd C:\Users\joshu\Workspace\accessible_talking_clock
+# python -m briefcase dev  # ❌ This won't work - no pyproject.toml here
 
 # If briefcase dev fails with template out of date error:
 python -m briefcase create  # Reset configuration, overwrite when prompted
@@ -36,13 +46,15 @@ pytest tests/
 ### Briefcase Troubleshooting
 - **Template out of date error**: Run `briefcase create` and choose to overwrite to reset the configuration pyproject file
 - **App won't start**: Check logs in `logs/` directory for detailed error messages
+- **ModuleNotFoundError**: Ensure dependencies are in `pyproject.toml` `requires` list AND installed in venv
+- **CRITICAL: briefcase dev location**: MUST be run from `accessibletalkingclock/` directory (where pyproject.toml is), NOT from project root
 
 ## Project Structure
 
 ### Directory Layout
 ```
-accessible_talking_clock/           # Project root (Git repository here)
-├── .venv/                         # Virtual environment
+accessible_talking_clock/           # Project root (Git repository here, .venv here)
+├── .venv/                         # Virtual environment (PROJECT ROOT LEVEL)
 ├── accessibletalkingclock/        # Briefcase application (created by briefcase new)
 │   ├── src/accessibletalkingclock/
 │   │   ├── app.py                # Main application logic
@@ -58,13 +70,16 @@ accessible_talking_clock/           # Project root (Git repository here)
 │   │   ├── __init__.py
 │   │   ├── test_app.py           # Main application tests
 │   │   └── test_audio_player.py  # AudioPlayer tests (Phase 2)
-│   ├── pyproject.toml            # Briefcase configuration
+│   ├── pyproject.toml            # Briefcase configuration (MUST include all runtime deps)
 │   ├── start.ps1                 # Windows startup script
 │   └── start.sh                  # Unix startup script
 └── plans/                         # Project planning documents
 ```
 
-**CRITICAL**: Git repository is at `accessible_talking_clock/` root level, NOT inside the `accessibletalkingclock/` subdirectory.
+**CRITICAL**: 
+- Git repository is at `accessible_talking_clock/` root level
+- Virtual environment (`.venv/`) is at `accessible_talking_clock/` root level
+- Briefcase app is at `accessible_talking_clock/accessibletalkingclock/`
 
 ## Testing Methodology
 
@@ -153,6 +168,61 @@ accessible_talking_clock/           # Project root (Git repository here)
 
 ## Code Conventions
 
+### Application Lifecycle Management
+**CRITICAL**: Proper cleanup is required to prevent resource leaks and threading issues
+
+#### Initialization Pattern
+```python
+class AccessibleTalkingClock(toga.App):
+    def __init__(self, *args, **kwargs):
+        """Initialize application."""
+        super().__init__(*args, **kwargs)
+        self._clock_task = None
+        self._shutdown_flag = False
+        # Initialize other state variables
+```
+
+#### Cleanup Pattern (REQUIRED)
+```python
+async def on_exit(self):
+    """Clean up resources before application exits."""
+    logger.info("Application exit handler called")
+    
+    # Signal background tasks to stop
+    self._shutdown_flag = True
+    
+    # Give async tasks time to stop gracefully
+    try:
+        await asyncio.sleep(0.5)
+        logger.info("Background tasks stopped")
+    except Exception as e:
+        logger.warning(f"Error waiting for tasks: {e}")
+    
+    # Clean up external resources (audio, files, etc.)
+    if self.audio_player:
+        try:
+            self.audio_player.cleanup()
+        except Exception as e:
+            logger.error(f"Error cleaning up audio player: {e}")
+    
+    logger.info("Application cleanup completed")
+    return True  # Allow exit
+```
+
+#### Background Task Pattern
+```python
+async def update_task(*args):
+    """Background task that checks shutdown flag."""
+    while not self._shutdown_flag:
+        try:
+            # Do work
+            await asyncio.sleep(1)
+        except Exception as e:
+            logger.error(f"Error in task: {e}")
+            await asyncio.sleep(1)
+    logger.info("Task stopped")
+```
+
 ### Logging
 - Use comprehensive logging for all user interactions
 - Log level: INFO for user actions, ERROR for failures
@@ -173,6 +243,7 @@ def _on_control_change(self, widget):
 - Pattern: `async def update_clock(*args):` (accepts interface parameter)
 - Use `self.add_background_task(coroutine)` (deprecated but functional)
 - Alternative: `asyncio.create_task()` or `App.on_running()` handler
+- **ALWAYS** make background tasks stoppable with shutdown flag
 
 ### Status Feedback
 - Always update `self.status_label.text` for screen reader announcements
@@ -213,6 +284,7 @@ Current: **Phase 2 Complete** ✅
   - UI integration (volume button, Test Chime button)
   - Error handling and status feedback
   - Non-blocking audio playback
+  - **Proper cleanup with BASS_Free()**
 
 #### Upcoming Phases
 - Phase 3: Soundpack implementation with audio files
@@ -224,10 +296,11 @@ Current: **Phase 2 Complete** ✅
 
 #### Branch Strategy
 - **Repository location**: `accessible_talking_clock/` (project root)
-- **For new features**: ALWAYS create a new branch
-  - Base branch: current branch (usually `main` or `dev`)
-  - Naming convention: `feature/feature-name` or `phase-N/feature-name`
-  - Example: `git checkout -b feature/audio-playback`
+- **main**: Production-ready code only
+- **dev**: Development integration branch (all feature branches merge here first)
+- **For new features**: ALWAYS create a new branch from `dev`
+  - Naming convention: `phase-N/feature-name` or `feature/feature-name`
+  - Example: `git checkout dev && git checkout -b phase-3/soundpack-implementation`
 - **Never work directly on main/dev branches** for new features
 
 #### Commit & Push Workflow
@@ -253,28 +326,36 @@ Current: **Phase 2 Complete** ✅
 #### Example Workflow
 ```bash
 # Starting new feature
-git checkout main  # or dev
-git pull origin main
-git checkout -b feature/audio-playback
+git checkout dev
+git pull origin dev
+git checkout -b phase-3/soundpack-implementation
 
 # Work cycle
 # ... write tests ...
-git add tests/test_audio.py
-git commit -m "Add tests for audio playback system"
-git push origin feature/audio-playback
+git add tests/test_soundpack.py
+git commit -m "Add tests for soundpack loading system"
+git push origin phase-3/soundpack-implementation
 
 # ... implement feature ...
-git add src/accessibletalkingclock/app.py
-git commit -m "Implement audio playback with sound_lib"
-git push origin feature/audio-playback
+git add src/accessibletalkingclock/soundpack.py
+git commit -m "Implement soundpack loading from directory structure"
+git push origin phase-3/soundpack-implementation
 
 # ... refactor ...
-git add src/accessibletalkingclock/app.py
-git commit -m "Refactor audio code into separate methods"
-git push origin feature/audio-playback
+git add src/accessibletalkingclock/soundpack.py
+git commit -m "Refactor soundpack code into separate methods"
+git push origin phase-3/soundpack-implementation
 
-# When feature complete
-# Create pull request or merge to main/dev
+# When feature complete - merge to dev first
+git checkout dev
+git pull origin dev
+git merge phase-3/soundpack-implementation
+git push origin dev
+
+# Later - merge dev to main for release
+git checkout main
+git merge dev
+git push origin main
 ```
 
 #### Commit Best Practices
@@ -288,7 +369,7 @@ git push origin feature/audio-playback
 ```bash
 # Setup
 uv venv
-.venv\Scripts\activate  # Windows
+.venv\Scripts\Activate.ps1  # Windows PowerShell
 source .venv/bin/activate  # Unix/Linux
 uv pip install briefcase toga sound_lib pytest ipykernel matplotlib
 ```
@@ -311,6 +392,41 @@ uv pip install briefcase toga sound_lib pytest ipykernel matplotlib
 - Briefcase app: `accessible_talking_clock/accessibletalkingclock/`
 - Always cd into the briefcase app directory before running `briefcase dev`
 
+### Threading Issues on Shutdown (KNOWN LIMITATION)
+**Issue**: When closing the application, threading errors appear:
+- `Windows fatal exception: code 0x80010108` (RPC_E_DISCONNECTED)
+- Errors in `toga_winforms\libs\proactor.py` and `pythonnet\__init__.py`
+
+**Root Cause**: This is a **known framework-level issue** with pythonnet and toga-winforms on Windows. The error occurs when:
+1. The WinForms event loop (proactor) is shutting down
+2. Pythonnet is trying to unload .NET assemblies
+3. COM threading conflicts occur between these two shutdown processes
+
+**Impact**:
+- Error appears AFTER the application window closes
+- Error appears AFTER cleanup code completes
+- Does NOT affect application functionality
+- Does NOT lose user data
+- Does NOT prevent clean shutdown
+- Users never see this error (console only, not in packaged apps)
+
+**Mitigation**:
+- We implement proper cleanup with `on_exit()` handler
+- All user-level resources are freed (audio, tasks, etc.)
+- This is the best we can do at the application level
+- See `THREADING_FIXES.md` for detailed documentation
+
+**References**:
+- pythonnet issue #1701: PythonEngine.Shutdown() threading issues
+- COM error 0x80010108: RPC_E_DISCONNECTED
+- Documented in `accessibletalkingclock/THREADING_FIXES.md`
+
+**DO NOT** attempt to "fix" this by:
+- Removing cleanup code
+- Adding sleeps before exit
+- Trying to manually control pythonnet shutdown
+- The error is unavoidable at the framework level
+
 ## Application Design Principles
 
 ### User Experience
@@ -324,11 +440,13 @@ uv pip install briefcase toga sound_lib pytest ipykernel matplotlib
 - Single class: `AccessibleTalkingClock(toga.App)`
 - Event handlers prefixed with `_on_` or `_` (private methods)
 - Helper methods for time formatting, UI updates
+- External systems (audio) in separate modules
 
 ### Error Handling
 - Try/except blocks in async operations
 - Log errors comprehensively
 - Graceful degradation (continue operation when possible)
+- Always clean up resources in finally blocks or cleanup handlers
 
 ## Documentation Standards
 
@@ -368,6 +486,8 @@ uv pip install briefcase toga sound_lib pytest ipykernel matplotlib
 - [x] Test Chime button plays audio
 - [x] Error handling for audio failures
 - [x] Status label announces audio events
+- [x] Cleanup handler implemented with BASS_Free()
+- [x] Background tasks stoppable with shutdown flag
 - [ ] Manual NVDA testing (requires user interaction)
 
 ## Resources & References
@@ -391,6 +511,7 @@ uv pip install briefcase toga sound_lib pytest ipykernel matplotlib
   - Error handling for missing/invalid files
   - Automatic BASS initialization
   - UI integration (volume button, Test Chime button)
+  - **Proper cleanup with BASS_Free() call**
 - **Testing**: 15 unit tests, all passing
 - **Documentation**: https://sound-lib.readthedocs.io/
 
@@ -413,6 +534,37 @@ if self.audio_player.is_playing():
 
 # Stop playback
 self.audio_player.stop()
+
+# CRITICAL: Clean up (done in app.on_exit())
+self.audio_player.cleanup()  # Frees BASS resources
+```
+
+### AudioPlayer Cleanup Pattern (REQUIRED)
+**MUST** be called in application `on_exit()` handler:
+```python
+def cleanup(self):
+    """Clean up audio resources including BASS library."""
+    global _bass_initialized
+    
+    logger.info("Cleaning up AudioPlayer resources")
+    
+    # Stop and free current stream
+    if self._current_stream:
+        try:
+            self._current_stream.stop()
+            self._current_stream.free()
+            self._current_stream = None
+        except Exception as e:
+            logger.warning(f"Error during stream cleanup: {e}")
+    
+    # Free BASS library resources
+    if _bass_initialized:
+        try:
+            BASS_Free()
+            _bass_initialized = False
+            logger.info("BASS audio system freed")
+        except Exception as e:
+            logger.warning(f"Error freeing BASS: {e}")
 ```
 
 ### Audio File Organization
@@ -436,3 +588,15 @@ self.audio_player.stop()
 - Threading required for background chimes (don't block UI)
 - Settings will persist to JSON file in user directory
 - Consider .gitkeep for empty sounds directory initially
+
+### Dependencies Management
+**CRITICAL**: All runtime dependencies MUST be in `pyproject.toml`:
+```toml
+[tool.briefcase.app.accessibletalkingclock]
+requires = [
+    "sound_lib",  # REQUIRED for audio playback
+    # Add other runtime dependencies here
+]
+```
+
+**Common mistake**: Installing package in venv but forgetting to add to `pyproject.toml` causes `ModuleNotFoundError` when running `briefcase dev`.

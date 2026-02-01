@@ -11,7 +11,7 @@ from pathlib import Path
 src_path = Path(__file__).parent / "src"
 sys.path.insert(0, str(src_path))
 
-from accessibletalkingclock.audio import AudioPlayer
+from accessibletalkingclock.audio import AudioPlayer  # noqa: E402
 
 def main():
     print("=== AudioPlayer Manual Test ===\n")
