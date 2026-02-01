@@ -4,14 +4,7 @@ Following TDD approach - these tests are written before implementation.
 """
 
 import pytest
-from pathlib import Path
 from accessibletalkingclock.audio import AudioPlayer
-
-
-@pytest.fixture
-def test_sound_path():
-    """Path to test sound file."""
-    return Path(__file__).parent.parent / "src" / "accessibletalkingclock" / "audio" / "test_sound.wav"
 
 
 @pytest.fixture
