@@ -79,8 +79,6 @@ def generate_chime(
         gap: Gap between notes.
     """
     sample_rate = 44100
-    total_duration = num_notes * note_duration + (num_notes - 1) * gap
-    num_samples = int(sample_rate * total_duration)
     
     samples = []
     note_samples = int(sample_rate * note_duration)
