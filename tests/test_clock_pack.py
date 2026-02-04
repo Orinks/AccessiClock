@@ -223,3 +223,177 @@ class TestClockPackInfo:
         )
         
         assert info.get_sound_path("nonexistent") is None
+
+
+class TestClockPackLoaderEdgeCases:
+    """Tests for clock_pack_loader edge cases and error paths (issue #12)."""
+
+    def test_discover_packs_nonexistent_directory(self):
+        """discover_packs should return empty dict when directory doesn't exist."""
+        from accessiclock.services.clock_pack_loader import ClockPackLoader
+
+        loader = ClockPackLoader(Path("/tmp/nonexistent_clocks_dir_12345"))
+        packs = loader.discover_packs()
+        assert packs == {}
+
+    def test_discover_packs_skips_files(self):
+        """discover_packs should skip regular files (non-directories)."""
+        from accessiclock.services.clock_pack_loader import ClockPackLoader
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            clocks_dir = Path(tmpdir)
+
+            # Create a regular file at top level (not a directory)
+            (clocks_dir / "not_a_pack.txt").write_text("just a file")
+
+            # Create a valid pack too
+            (clocks_dir / "valid_pack").mkdir()
+            (clocks_dir / "valid_pack" / "clock.json").write_text(
+                json.dumps({"name": "Valid", "version": "1.0.0"})
+            )
+
+            loader = ClockPackLoader(clocks_dir)
+            packs = loader.discover_packs()
+
+            assert len(packs) == 1
+            assert "valid_pack" in packs
+
+    def test_discover_packs_handles_clock_pack_error(self):
+        """discover_packs should skip packs that raise ClockPackError."""
+        from accessiclock.services.clock_pack_loader import ClockPackLoader
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            clocks_dir = Path(tmpdir)
+
+            # Create a pack with invalid JSON manifest
+            (clocks_dir / "bad_pack").mkdir()
+            (clocks_dir / "bad_pack" / "clock.json").write_text("{invalid json!!")
+
+            # Create a valid pack
+            (clocks_dir / "good_pack").mkdir()
+            (clocks_dir / "good_pack" / "clock.json").write_text(
+                json.dumps({"name": "Good", "version": "1.0.0"})
+            )
+
+            loader = ClockPackLoader(clocks_dir)
+            packs = loader.discover_packs()
+
+            # Bad pack skipped, good pack loaded
+            assert len(packs) == 1
+            assert "good_pack" in packs
+            assert "bad_pack" not in packs
+
+    def test_discover_packs_handles_generic_exception(self):
+        """discover_packs should skip packs that raise unexpected exceptions."""
+        from unittest.mock import patch
+
+        from accessiclock.services.clock_pack_loader import ClockPackLoader
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            clocks_dir = Path(tmpdir)
+
+            # Create a pack with a valid manifest
+            (clocks_dir / "error_pack").mkdir()
+            (clocks_dir / "error_pack" / "clock.json").write_text(
+                json.dumps({"name": "Error", "version": "1.0.0"})
+            )
+
+            loader = ClockPackLoader(clocks_dir)
+
+            # Patch load_pack to raise a generic exception
+            with patch.object(loader, "load_pack", side_effect=RuntimeError("disk error")):
+                packs = loader.discover_packs()
+
+            assert packs == {}
+
+    def test_load_pack_invalid_json(self):
+        """load_pack should raise ClockPackError for invalid JSON."""
+        from accessiclock.services.clock_pack_loader import ClockPackError, ClockPackLoader
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pack_dir = Path(tmpdir) / "broken"
+            pack_dir.mkdir()
+            (pack_dir / "clock.json").write_text("not valid json {{{")
+
+            loader = ClockPackLoader(Path(tmpdir))
+
+            with pytest.raises(ClockPackError, match="Invalid JSON"):
+                loader.load_pack("broken")
+
+    def test_load_pack_missing_version_field(self):
+        """load_pack should raise ClockPackError when 'version' is missing."""
+        from accessiclock.services.clock_pack_loader import ClockPackError, ClockPackLoader
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pack_dir = Path(tmpdir) / "no_version"
+            pack_dir.mkdir()
+            (pack_dir / "clock.json").write_text(
+                json.dumps({"name": "Test Pack", "author": "Test"})
+            )
+
+            loader = ClockPackLoader(Path(tmpdir))
+
+            with pytest.raises(ClockPackError, match="Missing required field"):
+                loader.load_pack("no_version")
+
+    def test_validate_pack_unsupported_audio_format(self):
+        """validate_pack should report unsupported audio formats."""
+        from accessiclock.services.clock_pack_loader import ClockPackLoader
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pack_dir = Path(tmpdir) / "bad_format"
+            pack_dir.mkdir()
+
+            manifest = {
+                "name": "Bad Format",
+                "version": "1.0.0",
+                "sounds": {"hour": "hour.xyz"},
+            }
+            (pack_dir / "clock.json").write_text(json.dumps(manifest))
+
+            # Create the file with unsupported extension
+            (pack_dir / "hour.xyz").touch()
+
+            loader = ClockPackLoader(Path(tmpdir))
+            pack_info = loader.load_pack("bad_format")
+
+            is_valid, errors = loader.validate_pack(pack_info)
+            assert is_valid is False
+            assert any("Unsupported audio format" in e for e in errors)
+
+    def test_get_pack_returns_none_for_missing(self):
+        """get_pack should return None for an uncached pack ID."""
+        from accessiclock.services.clock_pack_loader import ClockPackLoader
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            loader = ClockPackLoader(Path(tmpdir))
+            assert loader.get_pack("nonexistent") is None
+
+    def test_refresh_clears_and_rediscovers(self):
+        """refresh should clear the cache and re-discover packs."""
+        from accessiclock.services.clock_pack_loader import ClockPackLoader
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            clocks_dir = Path(tmpdir)
+
+            # Start with one pack
+            (clocks_dir / "pack1").mkdir()
+            (clocks_dir / "pack1" / "clock.json").write_text(
+                json.dumps({"name": "Pack 1", "version": "1.0.0"})
+            )
+
+            loader = ClockPackLoader(clocks_dir)
+            packs = loader.discover_packs()
+            assert len(packs) == 1
+
+            # Add another pack
+            (clocks_dir / "pack2").mkdir()
+            (clocks_dir / "pack2" / "clock.json").write_text(
+                json.dumps({"name": "Pack 2", "version": "1.0.0"})
+            )
+
+            # Refresh should find both
+            packs = loader.refresh()
+            assert len(packs) == 2
+            assert "pack1" in packs
+            assert "pack2" in packs
