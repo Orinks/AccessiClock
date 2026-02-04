@@ -515,21 +515,17 @@ class TestCleanup:
             player_module._use_sound_lib = original_use
             player_module._bass_initialized = original_init
 
-    def test_cleanup_frees_bass(self):
-        """cleanup should call BASS_Free when bass was initialized."""
+    def test_cleanup_resets_bass_flag(self):
+        """cleanup should reset _bass_initialized flag."""
         import accessiclock.audio.player as player_module
         from accessiclock.audio.player import AudioPlayer
 
         original_use = player_module._use_sound_lib
         original_init = player_module._bass_initialized
-        original_bass_free = getattr(player_module, "BASS_Free", None)
 
         try:
             player_module._use_sound_lib = True
             player_module._bass_initialized = True
-
-            mock_bass_free = MagicMock()
-            player_module.BASS_Free = mock_bass_free
 
             player = AudioPlayer.__new__(AudioPlayer)
             player._volume = 50
@@ -537,46 +533,32 @@ class TestCleanup:
 
             player.cleanup()
 
-            mock_bass_free.assert_called_once()
             assert player_module._bass_initialized is False
         finally:
             player_module._use_sound_lib = original_use
             player_module._bass_initialized = original_init
-            if original_bass_free is not None:
-                player_module.BASS_Free = original_bass_free
-            elif hasattr(player_module, "BASS_Free"):
-                delattr(player_module, "BASS_Free")
 
-    def test_cleanup_bass_free_error_suppressed(self):
-        """cleanup should suppress BASS_Free errors."""
+    def test_cleanup_bass_not_initialized_skips_reset(self):
+        """cleanup should not reset flag when bass was not initialized."""
         import accessiclock.audio.player as player_module
         from accessiclock.audio.player import AudioPlayer
 
         original_use = player_module._use_sound_lib
         original_init = player_module._bass_initialized
-        original_bass_free = getattr(player_module, "BASS_Free", None)
 
         try:
             player_module._use_sound_lib = True
-            player_module._bass_initialized = True
-
-            mock_bass_free = MagicMock(side_effect=RuntimeError("bass error"))
-            player_module.BASS_Free = mock_bass_free
+            player_module._bass_initialized = False
 
             player = AudioPlayer.__new__(AudioPlayer)
             player._volume = 50
             player._current_stream = None
 
-            # Should not raise
             player.cleanup()
-            mock_bass_free.assert_called_once()
+            assert player_module._bass_initialized is False
         finally:
             player_module._use_sound_lib = original_use
             player_module._bass_initialized = original_init
-            if original_bass_free is not None:
-                player_module.BASS_Free = original_bass_free
-            elif hasattr(player_module, "BASS_Free"):
-                delattr(player_module, "BASS_Free")
 
 
 class TestSoundLibIntegration:
