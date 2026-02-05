@@ -95,6 +95,28 @@ class TestChimeScheduling:
         test_time = time(15, 30, 0)
         assert service.should_chime_now(test_time) == "half_hour"
 
+    def test_quarter_hour_at_minute_0_when_hourly_disabled(self):
+        """Quarter-hour chime should fire at XX:00 when hourly disabled."""
+        from accessiclock.services.clock_service import ClockService
+
+        service = ClockService()
+        service.chime_hourly = False
+        service.chime_quarter_hour = True
+
+        test_time = time(15, 0, 0)
+        assert service.should_chime_now(test_time) == "quarter_hour"
+
+    def test_quarter_hour_at_minute_30_when_half_hour_disabled(self):
+        """Quarter-hour chime should fire at XX:30 when half-hour disabled."""
+        from accessiclock.services.clock_service import ClockService
+
+        service = ClockService()
+        service.chime_half_hour = False
+        service.chime_quarter_hour = True
+
+        test_time = time(15, 30, 0)
+        assert service.should_chime_now(test_time) == "quarter_hour"
+
 
 class TestChimeTracking:
     """Test that chimes don't repeat within the same minute."""
@@ -185,3 +207,33 @@ class TestQuietHours:
         
         # Should chime at any hour when quiet hours disabled
         assert service.should_chime_now(time(3, 0, 0)) == "hour"
+
+    def test_same_day_quiet_hours(self):
+        """Should respect quiet hours within the same day."""
+        from accessiclock.services.clock_service import ClockService
+
+        service = ClockService()
+        service.chime_hourly = True
+        service.quiet_start = time(9, 0)
+        service.quiet_end = time(17, 0)
+
+        # 12 PM - within quiet hours
+        assert service.should_chime_now(time(12, 0, 0)) is None
+        # 8 AM - before quiet hours
+        assert service.should_chime_now(time(8, 0, 0)) == "hour"
+        # 6 PM - after quiet hours
+        assert service.should_chime_now(time(18, 0, 0)) == "hour"
+
+    def test_overnight_quiet_hours_boundaries(self):
+        """Quiet hours should be inclusive of start and exclusive of end."""
+        from accessiclock.services.clock_service import ClockService
+
+        service = ClockService()
+        service.chime_hourly = True
+        service.quiet_start = time(23, 0)
+        service.quiet_end = time(7, 0)
+
+        # Exactly at start - within quiet hours
+        assert service.should_chime_now(time(23, 0, 0)) is None
+        # Exactly at end - outside quiet hours
+        assert service.should_chime_now(time(7, 0, 0)) == "hour"
