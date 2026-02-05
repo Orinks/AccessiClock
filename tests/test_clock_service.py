@@ -151,6 +151,24 @@ class TestChimeTracking:
         # Should chime at 4:00
         assert service.should_chime_now(time(16, 0, 0)) == "hour"
 
+    def test_reset_chime_tracking(self):
+        """Reset should allow chime again at same minute."""
+        from accessiclock.services.clock_service import ClockService
+
+        service = ClockService()
+        service.chime_hourly = True
+
+        test_time = time(15, 0, 0)
+        # Chime once
+        assert service.should_chime_now(test_time) == "hour"
+        service.mark_chimed(test_time)
+        # Blocked
+        assert service.should_chime_now(test_time) is None
+        # Reset tracking
+        service.reset_chime_tracking()
+        # Should chime again
+        assert service.should_chime_now(test_time) == "hour"
+
 
 class TestGetCurrentHour:
     """Test hour extraction for hourly chimes."""
