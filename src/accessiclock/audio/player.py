@@ -19,7 +19,6 @@ _use_sound_lib = False
 # Try to import sound_lib (cross-platform: Windows, macOS, Linux)
 try:
     from sound_lib import stream
-    from sound_lib.main import BASS_Free
 
     _use_sound_lib = True
     logger.debug("sound_lib available")
@@ -176,11 +175,7 @@ class AudioPlayer:
             except Exception as e:
                 logger.warning(f"Error during AudioPlayer cleanup: {e}")
 
-        # Free BASS library resources
+        # Reset BASS initialization flag
         if _use_sound_lib and _bass_initialized:
-            try:
-                BASS_Free()
-                _bass_initialized = False
-                logger.info("BASS audio system freed")
-            except Exception as e:
-                logger.warning(f"Error freeing BASS audio system: {e}")
+            _bass_initialized = False
+            logger.info("BASS audio system cleanup complete")
