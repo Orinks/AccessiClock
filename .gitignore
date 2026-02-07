@@ -94,3 +94,7 @@ briefcase.*.log
 # UV package manager
 uv.lock
 .uv/
+
+# Environment
+.env
+.env.*
