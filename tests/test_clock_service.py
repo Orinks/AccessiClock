@@ -195,8 +195,7 @@ class TestQuietHours:
         
         service = ClockService()
         service.chime_hourly = True
-        service.quiet_start = time(23, 0)  # 11 PM
-        service.quiet_end = time(7, 0)     # 7 AM
+        service.set_quiet_hours(time(23, 0), time(7, 0))
         
         # 2 AM - within quiet hours
         assert service.should_chime_now(time(2, 0, 0)) is None
@@ -210,8 +209,7 @@ class TestQuietHours:
         
         service = ClockService()
         service.chime_hourly = True
-        service.quiet_start = time(23, 0)
-        service.quiet_end = time(7, 0)
+        service.set_quiet_hours(time(23, 0), time(7, 0))
         
         # 10 AM - outside quiet hours
         assert service.should_chime_now(time(10, 0, 0)) == "hour"
@@ -232,8 +230,7 @@ class TestQuietHours:
 
         service = ClockService()
         service.chime_hourly = True
-        service.quiet_start = time(9, 0)
-        service.quiet_end = time(17, 0)
+        service.set_quiet_hours(time(9, 0), time(17, 0))
 
         # 12 PM - within quiet hours
         assert service.should_chime_now(time(12, 0, 0)) is None
@@ -242,14 +239,38 @@ class TestQuietHours:
         # 6 PM - after quiet hours
         assert service.should_chime_now(time(18, 0, 0)) == "hour"
 
+    def test_set_quiet_hours_enables_and_configures(self):
+        """set_quiet_hours should enable quiet hours and set start/end."""
+        from accessiclock.services.clock_service import ClockService
+
+        service = ClockService()
+        assert service.quiet_hours_enabled is False
+
+        service.set_quiet_hours(time(22, 0), time(7, 0))
+        assert service.quiet_hours_enabled is True
+        assert service.quiet_start == time(22, 0)
+        assert service.quiet_end == time(7, 0)
+
+    def test_quiet_hours_disabled_attribute(self):
+        """Setting quiet_hours_enabled to False should allow chimes."""
+        from accessiclock.services.clock_service import ClockService
+
+        service = ClockService()
+        service.chime_hourly = True
+        service.set_quiet_hours(time(0, 0), time(23, 59))
+        # Should be quiet
+        assert service.should_chime_now(time(12, 0, 0)) is None
+        # Disable via attribute
+        service.quiet_hours_enabled = False
+        assert service.should_chime_now(time(12, 0, 0)) == "hour"
+
     def test_overnight_quiet_hours_boundaries(self):
         """Quiet hours should be inclusive of start and exclusive of end."""
         from accessiclock.services.clock_service import ClockService
 
         service = ClockService()
         service.chime_hourly = True
-        service.quiet_start = time(23, 0)
-        service.quiet_end = time(7, 0)
+        service.set_quiet_hours(time(23, 0), time(7, 0))
 
         # Exactly at start - within quiet hours
         assert service.should_chime_now(time(23, 0, 0)) is None

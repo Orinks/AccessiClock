@@ -59,6 +59,9 @@ class AccessiClockApp(wx.App):
         self.chime_hourly: bool = True
         self.chime_half_hour: bool = False
         self.chime_quarter_hour: bool = False
+        self.quiet_hours_enabled: bool = False
+        self.quiet_start: str = "22:00"
+        self.quiet_end: str = "07:00"
 
         super().__init__()
 
@@ -118,6 +121,19 @@ class AccessiClockApp(wx.App):
             self.clock_service.chime_hourly = self.chime_hourly
             self.clock_service.chime_half_hour = self.chime_half_hour
             self.clock_service.chime_quarter_hour = self.chime_quarter_hour
+
+            # Sync quiet hours
+            if self.quiet_hours_enabled:
+                from datetime import time as dt_time
+                start_parts = self.quiet_start.split(":")
+                end_parts = self.quiet_end.split(":")
+                self.clock_service.set_quiet_hours(
+                    dt_time(int(start_parts[0]), int(start_parts[1])),
+                    dt_time(int(end_parts[0]), int(end_parts[1])),
+                )
+            else:
+                self.clock_service.quiet_hours_enabled = False
+
             logger.debug("Clock service settings synced with config")
 
     def _init_audio(self) -> None:
@@ -157,6 +173,11 @@ class AccessiClockApp(wx.App):
                 self.chime_half_hour = self.config.get("chime_half_hour", False)
                 self.chime_quarter_hour = self.config.get("chime_quarter_hour", False)
 
+                # Quiet hours
+                self.quiet_hours_enabled = self.config.get("quiet_hours_enabled", False)
+                self.quiet_start = self.config.get("quiet_start", "22:00")
+                self.quiet_end = self.config.get("quiet_end", "07:00")
+
                 logger.info(f"Configuration loaded from {config_file}")
             except Exception as e:
                 logger.warning(f"Failed to load config: {e}")
@@ -172,6 +193,9 @@ class AccessiClockApp(wx.App):
                 "chime_hourly": self.chime_hourly,
                 "chime_half_hour": self.chime_half_hour,
                 "chime_quarter_hour": self.chime_quarter_hour,
+                "quiet_hours_enabled": self.quiet_hours_enabled,
+                "quiet_start": self.quiet_start,
+                "quiet_end": self.quiet_end,
             }
         )
 

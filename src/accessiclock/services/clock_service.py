@@ -29,6 +29,7 @@ class ClockService:
         self.chime_quarter_hour: bool = False
         
         # Quiet hours (None = disabled)
+        self.quiet_hours_enabled: bool = False
         self.quiet_start: time | None = None
         self.quiet_end: time | None = None
         
@@ -100,6 +101,18 @@ class ClockService:
         hour = current_time.hour % 12
         return 12 if hour == 0 else hour
 
+    def set_quiet_hours(self, start: time, end: time) -> None:
+        """
+        Configure quiet hours.
+        
+        Args:
+            start: Start time for quiet hours.
+            end: End time for quiet hours.
+        """
+        self.quiet_hours_enabled = True
+        self.quiet_start = start
+        self.quiet_end = end
+
     def _is_quiet_time(self, current_time: time) -> bool:
         """
         Check if the given time falls within quiet hours.
@@ -110,6 +123,8 @@ class ClockService:
         Returns:
             True if within quiet hours, False otherwise.
         """
+        if not self.quiet_hours_enabled:
+            return False
         if self.quiet_start is None or self.quiet_end is None:
             return False
         
