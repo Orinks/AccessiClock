@@ -121,6 +121,29 @@ class ClockService:
             # Quiet hours within same day
             return self.quiet_start <= current_time < self.quiet_end
 
+    @property
+    def quiet_hours_enabled(self) -> bool:
+        """Return whether quiet hours are currently enabled."""
+        return self.quiet_start is not None and self.quiet_end is not None
+
+    @quiet_hours_enabled.setter
+    def quiet_hours_enabled(self, value: bool) -> None:
+        """Enable or disable quiet hours. Disabling clears start/end times."""
+        if not value:
+            self.quiet_start = None
+            self.quiet_end = None
+
+    def set_quiet_hours(self, start: time, end: time) -> None:
+        """
+        Set quiet hours range.
+
+        Args:
+            start: Start time for quiet hours.
+            end: End time for quiet hours.
+        """
+        self.quiet_start = start
+        self.quiet_end = end
+
     def reset_chime_tracking(self) -> None:
         """Reset the chime tracking (e.g., after settings change)."""
         self._last_chime_minute = None
