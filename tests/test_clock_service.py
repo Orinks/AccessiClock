@@ -255,3 +255,29 @@ class TestQuietHours:
         assert service.should_chime_now(time(23, 0, 0)) is None
         # Exactly at end - outside quiet hours
         assert service.should_chime_now(time(7, 0, 0)) == "hour"
+
+    def test_set_quiet_hours_method(self):
+        """set_quiet_hours should configure start and end times."""
+        from accessiclock.services.clock_service import ClockService
+
+        service = ClockService()
+        service.set_quiet_hours(time(22, 0), time(6, 0))
+
+        assert service.quiet_start == time(22, 0)
+        assert service.quiet_end == time(6, 0)
+        assert service.quiet_hours_enabled is True
+
+    def test_quiet_hours_enabled_property(self):
+        """quiet_hours_enabled should reflect whether quiet hours are set."""
+        from accessiclock.services.clock_service import ClockService
+
+        service = ClockService()
+        assert service.quiet_hours_enabled is False
+
+        service.set_quiet_hours(time(22, 0), time(6, 0))
+        assert service.quiet_hours_enabled is True
+
+        service.quiet_hours_enabled = False
+        assert service.quiet_hours_enabled is False
+        assert service.quiet_start is None
+        assert service.quiet_end is None

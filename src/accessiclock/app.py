@@ -157,6 +157,18 @@ class AccessiClockApp(wx.App):
                 self.chime_half_hour = self.config.get("chime_half_hour", False)
                 self.chime_quarter_hour = self.config.get("chime_quarter_hour", False)
 
+                # Restore quiet hours
+                if self.config.get("quiet_hours_enabled", False) and self.clock_service:
+                    from datetime import time as dt_time
+                    try:
+                        sh, sm = map(int, self.config["quiet_start"].split(":"))
+                        eh, em = map(int, self.config["quiet_end"].split(":"))
+                        self.clock_service.set_quiet_hours(dt_time(sh, sm), dt_time(eh, em))
+                    except (KeyError, ValueError) as e:
+                        logger.warning(f"Failed to restore quiet hours: {e}")
+                elif self.clock_service:
+                    self.clock_service.quiet_hours_enabled = False
+
                 logger.info(f"Configuration loaded from {config_file}")
             except Exception as e:
                 logger.warning(f"Failed to load config: {e}")
@@ -165,6 +177,16 @@ class AccessiClockApp(wx.App):
         """Save configuration to file."""
         import json
 
+        quiet_config = {}
+        if self.clock_service and self.clock_service.quiet_hours_enabled:
+            quiet_config = {
+                "quiet_hours_enabled": True,
+                "quiet_start": self.clock_service.quiet_start.strftime("%H:%M"),
+                "quiet_end": self.clock_service.quiet_end.strftime("%H:%M"),
+            }
+        else:
+            quiet_config = {"quiet_hours_enabled": False}
+
         self.config.update(
             {
                 "volume": self.current_volume,
@@ -172,6 +194,7 @@ class AccessiClockApp(wx.App):
                 "chime_hourly": self.chime_hourly,
                 "chime_half_hour": self.chime_half_hour,
                 "chime_quarter_hour": self.chime_quarter_hour,
+                **quiet_config,
             }
         )
 
