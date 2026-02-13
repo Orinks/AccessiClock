@@ -162,6 +162,7 @@ class SettingsDialog(wx.Dialog):
             voices = ["(Default system voice)"]
         
         self.voice_choice = wx.Choice(panel, choices=voices)
+        self.voice_choice.SetName("Voice")
         self.voice_choice.SetSelection(0)
         sizer.Add(self.voice_choice, 0, wx.EXPAND | wx.ALL, 10)
         
@@ -174,6 +175,7 @@ class SettingsDialog(wx.Dialog):
             panel, value=150, minValue=50, maxValue=300,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL
         )
+        self.rate_slider.SetName("Speech rate")
         rate_sizer.Add(self.rate_slider, 1, wx.EXPAND)
         sizer.Add(rate_sizer, 0, wx.EXPAND | wx.ALL, 10)
         
@@ -226,6 +228,7 @@ class SettingsDialog(wx.Dialog):
         self.quiet_start_hour = wx.SpinCtrl(
             panel, min=0, max=23, initial=22, size=(60, -1)
         )
+        self.quiet_start_hour.SetName("Quiet hours start hour")
         start_sizer.Add(self.quiet_start_hour, 0, wx.RIGHT, 5)
         
         start_colon = wx.StaticText(panel, label=":")
@@ -234,6 +237,7 @@ class SettingsDialog(wx.Dialog):
         self.quiet_start_min = wx.SpinCtrl(
             panel, min=0, max=59, initial=0, size=(60, -1)
         )
+        self.quiet_start_min.SetName("Quiet hours start minute")
         start_sizer.Add(self.quiet_start_min, 0)
         
         time_sizer.Add(start_sizer, 0, wx.ALL, 5)
@@ -246,6 +250,7 @@ class SettingsDialog(wx.Dialog):
         self.quiet_end_hour = wx.SpinCtrl(
             panel, min=0, max=23, initial=7, size=(60, -1)
         )
+        self.quiet_end_hour.SetName("Quiet hours end hour")
         end_sizer.Add(self.quiet_end_hour, 0, wx.RIGHT, 5)
         
         end_colon = wx.StaticText(panel, label=":")
@@ -254,6 +259,7 @@ class SettingsDialog(wx.Dialog):
         self.quiet_end_min = wx.SpinCtrl(
             panel, min=0, max=59, initial=0, size=(60, -1)
         )
+        self.quiet_end_min.SetName("Quiet hours end minute")
         end_sizer.Add(self.quiet_end_min, 0)
         
         time_sizer.Add(end_sizer, 0, wx.ALL, 5)
