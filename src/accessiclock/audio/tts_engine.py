@@ -180,7 +180,9 @@ class TTSEngine:
             next_hour = hour % 12 + 1
             if next_hour == 0:
                 next_hour = 12
-            return f"quarter to {next_hour} {am_pm}"
+            # Flip AM/PM when crossing noon (12 PM) or midnight (12 AM)
+            next_am_pm = ("PM" if am_pm == "AM" else "AM") if hour == 11 else am_pm
+            return f"quarter to {next_hour} {next_am_pm}"
         else:
             return f"{hour}:{minute:02d} {am_pm}"
 

@@ -186,6 +186,36 @@ class TestTimeFormatting:
         result = engine.format_time(time(14, 45), style="natural")
         assert "quarter to" in result.lower()
 
+    def test_format_time_natural_quarter_to_noon_boundary(self):
+        """At 11:45 AM, 'quarter to' should say 'quarter to 12 PM' not 'AM'."""
+        from accessiclock.audio.tts_engine import TTSEngine
+
+        engine = TTSEngine(force_dummy=True)
+        result = engine.format_time(time(11, 45), style="natural")
+        assert "quarter to" in result.lower()
+        assert "12" in result
+        assert "PM" in result
+
+    def test_format_time_natural_quarter_to_midnight_boundary(self):
+        """At 11:45 PM, 'quarter to' should say 'quarter to 12 AM' not 'PM'."""
+        from accessiclock.audio.tts_engine import TTSEngine
+
+        engine = TTSEngine(force_dummy=True)
+        result = engine.format_time(time(23, 45), style="natural")
+        assert "quarter to" in result.lower()
+        assert "12" in result
+        assert "AM" in result
+
+    def test_format_time_natural_quarter_to_no_boundary(self):
+        """At 2:45 PM, 'quarter to' should keep PM."""
+        from accessiclock.audio.tts_engine import TTSEngine
+
+        engine = TTSEngine(force_dummy=True)
+        result = engine.format_time(time(14, 45), style="natural")
+        assert "quarter to" in result.lower()
+        assert "3" in result
+        assert "PM" in result
+
     def test_format_time_natural_irregular_minute(self):
         """Natural style with irregular minutes should show time normally."""
         from accessiclock.audio.tts_engine import TTSEngine
