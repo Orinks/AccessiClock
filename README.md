@@ -127,6 +127,10 @@ Settings are stored in:
 - Linux: `~/.config/AccessiClock/config.json`
 - Portable mode: `./data/config.json`
 
+## Migration Notes
+
+- Current migration parity checklist: `docs/wxpython-migration-parity-checklist.md`
+
 ## Development
 
 ### Running Tests
