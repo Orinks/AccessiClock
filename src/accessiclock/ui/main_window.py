@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 import wx
 
 from ..constants import TIME_FORMAT_12H, VOLUME_LEVELS
+from ..core.shortcuts import build_shortcut_help
 
 if TYPE_CHECKING:
     from ..app import AccessiClockApp
@@ -60,8 +61,9 @@ class MainWindow(wx.Frame):
         # Start clock timer
         self._start_clock_timer()
 
-        # Center window
+        # Center window and set predictable focus once shown.
         self.Centre()
+        wx.CallAfter(self._set_initial_focus)
 
         logger.info("Main window created")
 
@@ -217,9 +219,14 @@ class MainWindow(wx.Frame):
         self.settings_button.Bind(wx.EVT_BUTTON, self._on_settings)
 
     def _setup_keyboard_shortcuts(self) -> None:
-        """Set up keyboard shortcuts."""
-        # Keyboard shortcuts are handled via menu accelerators (F5, Space, etc.)
-        # defined in _create_menu_bar()
+        """Set up keyboard shortcuts and announce map in logs/status."""
+        logger.info("Shortcut map: %s", build_shortcut_help())
+
+    def _set_initial_focus(self) -> None:
+        """Move focus to a stable control to help screen reader users on startup."""
+        if self.clock_selection and self.clock_selection.IsShownOnScreen():
+            self.clock_selection.SetFocus()
+            self._set_status("Ready. Focus is on clock selection. Use Tab to navigate.")
 
     def _start_clock_timer(self) -> None:
         """Start the clock update timer."""
